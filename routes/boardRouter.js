@@ -2,13 +2,6 @@ const express = require("express");
 const router = express.Router();
 const admin = require("firebase-admin");
 
-// Firebase Admin SDK 초기화
-const serviceAccount = require("./path/to/serviceAccountKey.json"); // 서비스 계정 키 경로
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  databaseURL: "https://your-project-id.firebaseio.com", // 파이어베이스 프로젝트의 데이터베이스 URL
-});
-
 // Firebase 데이터베이스에 접근
 const db = admin.firestore();
 
