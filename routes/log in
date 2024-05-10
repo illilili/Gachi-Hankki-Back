@@ -61,12 +61,13 @@ app.post('/login', async (req, res) => {
 app.post('/complete-signup', (req, res) => {
   // 클라이언트로부터 추가 정보를 받아옴
   const { userId, gender } = req.body;
- 
+
   console.log('Additional information saved for user:', userId);
   res.status(200).send('회원가입이 완료되었습니다.');
 });
 
 // 서버 시작
-app.listen(port, () => {
-  console.log(`서버가 http://localhost:${port} 에서 실행 중입니다.`);
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
