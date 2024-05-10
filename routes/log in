@@ -9,7 +9,10 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const mysql = require('mysql');
+
+const { initializeApp } = require("firebase-admin/app");
+const { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } = require("firebase-admin/auth");
+
 
 const app = express();
 const port = 3000;
