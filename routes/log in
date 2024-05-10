@@ -1,139 +1,72 @@
- /**
-/users`: 사용자 정보를 가져오는 GET 
-/signup`: 사용자가 회원가입을 할 때 사용되는 POST 
-/login`: 사용자가 로그인할 때 사용되는 POST 
-/complete-signup`: 사용자가 추가 정보를 제공하여 회원가입을 완료할 때 사용되는 POST
-   */
-
 const express = require('express');
 const bodyParser = require('body-parser');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
+// Firebase 관련 모듈 import
 const { initializeApp } = require("firebase-admin/app");
 const { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } = require("firebase-admin/auth");
-
 
 const app = express();
 const port = 3000;
 
 app.use(bodyParser.json());
 
-// MySQL 데이터베이스 연결 설정
-const connection = mysql.createConnection({
-  host: 'localhost',
-  user: 'your_username',
-  password: 'your_password',
-  database: 'your_database_name'
-}); 
+// Firebase 앱 초기화
+const firebaseConfig = {
+  apiKey: "AIzaSyDVOW_tka935YrTMqwm70Gl-4lS1YUU9g8",
+  projectId: "hanbat-capstone-d4979"
+};
 
-// MySQL 데이터베이스 연결
-connection.connect((err) => {
-  if (err) {
-    console.error('Error connecting to MySQL database:', err);
-    return;
+const firebaseApp = initializeApp(firebaseConfig);
+const auth = getAuth(firebaseApp);
+
+// 회원가입 엔드포인트
+app.post('/signup', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    // Firebase Authentication을 사용하여 회원가입
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+
+    // 회원가입 성공 시 토큰 발급
+    const token = jwt.sign({ userId: user.uid }, 'your_secret_key', { expiresIn: '1h' });
+    res.status(200).json({ token });
+  } catch (error) {
+    console.error('Error signing up:', error);
+    res.status(500).send('Error signing up');
   }
-  console.log('Connected to MySQL database');
-});
-
-// GET /users 엔드포인트 - 사용자 정보 가져오기
-app.get('/users', (req, res) => {
-  // MySQL 쿼리 실행
-  connection.query('SELECT * FROM users', (err, results) => {
-    if (err) {
-      console.error('Error executing MySQL query:', err);
-      res.status(500).send('Error retrieving user information');
-      return;
-    }
-    res.json(results);
-  });
-});
-
-// POST /signup 엔드포인트 - 회원가입
-app.post('/signup', (req, res) => {
-  // 클라이언트로부터 회원가입 정보를 받아옴
-  const { username, email, password } = req.body;
-
-  // MySQL 데이터베이스에 회원가입 정보 저장
-  const sql = 'INSERT INTO users (username, email, password) VALUES (?, ?, ?)';
-  connection.query(sql, [username, email, password], (err, result) => {
-    if (err) {
-      console.error('Error executing MySQL query:', err);
-      res.status(500).send('Error saving user information');
-      return;
-    }
-    console.log('New user added to database:', result.insertId);
-    res.status(200).send('회원가입이 완료되었습니다.');
-  });
 });
 
 // 로그인 엔드포인트
-app.post('/login', (req, res) => {
-    const { email, password } = req.body; // 요청에서 이메일과 비밀번호 추출
-  
-    // MySQL에서 해당 이메일로 사용자 정보 조회
-    const sql = 'SELECT * FROM users WHERE email = ?';
-    connection.query(sql, [email], (err, results) => {
-      if (err) {
-        console.error('Error executing MySQL query:', err);
-        res.status(500).send('Error retrieving user information');
-        return;
-      }
-  
-      // 조회된 사용자가 없을 경우
-      if (results.length === 0) {
-        res.status(401).send('Invalid email or password');
-        return;
-      }
-  
-      // 조회된 사용자가 있을 경우 비밀번호 확인
-      const user = results[0];
-      bcrypt.compare(password, user.password, (err, isMatch) => {
-        if (err) {
-          console.error('Error comparing passwords:', err);
-          res.status(500).send('Error comparing passwords');
-          return;
-        }
-        // 비밀번호가 일치하지 않을 경우
-        if (!isMatch) {
-          res.status(401).send('Invalid email or password');
-          return;
-        }
-        // JWT 생성
-      const token = jwt.sign({ userId: user.id }, 'your_secret_key', { expiresIn: '1h' });
-      // 클라이언트에게 토큰 전달
-      res.status(200).json({ token });
-    });
-  });
+app.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Firebase Authentication을 사용하여 로그인
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+
+    // 로그인 성공 시 토큰 발급
+    const token = jwt.sign({ userId: user.uid }, 'your_secret_key', { expiresIn: '1h' });
+    res.status(200).json({ token });
+  } catch (error) {
+    console.error('Error logging in:', error);
+    res.status(401).send('Invalid email or password');
+  }
 });
 
-
-// GET / 엔드포인트 - 인사 메시지 출력
-app.get('/', (req, res) => {
-    res.send('Hello World!');
-  });
-  
-// POST /complete-signup 엔드포인트 - 회원가입 완료
+// 회원가입 정보 완료 엔드포인트
 app.post('/complete-signup', (req, res) => {
-    // 클라이언트로부터 추가 정보를 받아옴
-    const { userId, gender } = req.body;
-  
-    // MySQL 데이터베이스에 성별 정보 저장
-    const sql = 'UPDATE users SET gender=? WHERE id=?';
-    connection.query(sql, [gender, userId], (err, result) => {
-      if (err) {
-        console.error('Error executing MySQL query:', err);
-        res.status(500).send('Error saving gender information');
-        return;
-      }
-      console.log('Gender information saved to database');
-      res.status(200).send('회원가입이 완료되었습니다.');
-    });
-  });
-  
-
+  // 클라이언트로부터 추가 정보를 받아옴
+  const { userId, gender } = req.body;
+ 
+  console.log('Additional information saved for user:', userId);
+  res.status(200).send('회원가입이 완료되었습니다.');
+});
 
 // 서버 시작
 app.listen(port, () => {
-    console.log(`서버가 http://localhost:${port} 에서 실행 중입니다.`);
-  });
+  console.log(`서버가 http://localhost:${port} 에서 실행 중입니다.`);
+});
