@@ -23,21 +23,46 @@ const auth = getAuth(firebaseApp);
 
 // 회원가입 엔드포인트
 app.post('/signup', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    
-    // Firebase Authentication을 사용하여 회원가입
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    const user = userCredential.user;
+    try {
+      const { email, hanbatEmail, password, confirmPassword, name, gender, department, birthdate, purpose, path } = req.body;
+      
+      // 필수 필드 유효성 검사
+      if (!email || !hanbatEmail || !password || !confirmPassword) {
+        return res.status(400).send('이메일, 한밭대 이메일 인증번호, 비밀번호, 비밀번호 확인은 필수 입력 사항입니다.');
+      }
+      
+      // 비밀번호 확인
+      if (password !== confirmPassword) {
+        return res.status(400).send('비밀번호와 비밀번호 확인이 일치하지 않습니다.');
+      }
+      
+    // 비밀번호 해싱
+    const hashedPassword = await bcrypt.hash(password, 10); // 비밀번호를 해싱한 후에 저장
+  
 
-    // 회원가입 성공 시 토큰 발급
-    const token = jwt.sign({ userId: user.uid }, 'your_secret_key', { expiresIn: '1h' });
-    res.status(200).json({ token });
-  } catch (error) {
-    console.error('Error signing up:', error);
-    res.status(500).send('Error signing up');
-  }
-});
+      // Firebase Authentication을 사용하여 회원가입
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+  
+      // 회원가입 성공 시 토큰 발급
+      const token = jwt.sign({ userId: user.uid }, 'your_secret_key', { expiresIn: '1h' });
+  
+      // 추가 정보 저장 (여기서는 로그만 출력)
+      console.log('Additional information saved for user:');
+      console.log('- 이름:', name);
+      console.log('- 성별:', gender);
+      console.log('- 학과:', department);
+      console.log('- 생년월일:', birthdate);
+      console.log('- 목적:', purpose);
+      console.log('- 경로:', path);
+      
+      res.status(200).json({ token });
+    } catch (error) {
+      console.error('Error signing up:', error);
+      res.status(500).send('Error signing up');
+    }
+  });
+  
 
 // 로그인 엔드포인트
 app.post('/login', async (req, res) => {
