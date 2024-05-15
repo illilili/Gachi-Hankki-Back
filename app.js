@@ -1,4 +1,5 @@
 const express = require("express");
+const bodyParser = require("body-parser");
 const app = express();
 
 var admin = require("firebase-admin");
@@ -11,9 +12,12 @@ admin.initializeApp({
     "https://hanbat-capstone-d4979-default-rtdb.asia-southeast1.firebasedatabase.app",
 });
 
+// 미들웨어 설정
+app.use(bodyParser.json());
+
 // 라우트 예시
 app.get("/", (req, res) => {
-  res.send("Hello World!");
+  res.send("성공!");
 });
 
 // 게시판 라우트를 분리한 파일을 추가

@@ -1,16 +1,14 @@
-const { db } = require("./firebaseConfig");
+const { db } = require("../config/firebaseConfig");
 
 // Firestore에 게시물 컬렉션을 참조합니다.
 const postsCollection = db.collection("posts");
 
 // 게시물을 생성하는 함수
-async function createPost(title, content, authorId) {
+async function createPost(postData) {
   try {
     // 게시물을 Firestore에 추가합니다.
     await postsCollection.add({
-      title: title,
-      content: content,
-      authorId: authorId,
+      ...postData,
       createdAt: new Date(),
     });
     console.log("Post created successfully!");
