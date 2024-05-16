@@ -24,4 +24,13 @@ router.get("/posts", (req, res) => {
     });
 });
 
+// 회원가입 엔드포인트
+router.post('/signup', boardController.signup);
+
+// 로그인 엔드포인트
+router.post('/login', boardController.login);
+
+// 회원가입 정보 완료 엔드포인트
+router.post('/complete-signup', boardController.completeSignup);
+
 module.exports = router;
