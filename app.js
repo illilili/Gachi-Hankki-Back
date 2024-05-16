@@ -24,6 +24,9 @@ app.get("/", (req, res) => {
 const boardRouter = require("./routes/boardRouter.js");
 app.use("/board", boardRouter);
 
+const loginRouter = require("./routes/loginRouter.js");
+app.use("/login", loginRouter);
+
 // 서버 시작
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
