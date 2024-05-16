@@ -7,7 +7,7 @@ const db = admin.firestore(); // Firestore에 접근하는 부분을 라우터�
 // 게시글 목록 조회
 router.get("/", async (req, res) => {
   try {
-    const postsSnapshot = await db.collection("Post").get();
+    const postsSnapshot = await db.collection("posts").get();
     console.log("Firestore에서 가져온 데이터:", postsSnapshot.docs);
     const posts = [];
     postsSnapshot.forEach((doc) => {
