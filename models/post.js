@@ -6,10 +6,11 @@ const postsCollection = db.collection("posts");
 // 게시물을 생성하는 함수
 async function createPost(postData) {
   try {
+    const currentDate = new Date();
     // 게시물을 Firestore에 추가합니다.
     await postsCollection.add({
       ...postData,
-      createdAt: new Date(),
+      PostDate: currentDate, // 현재 시간을 PostDate 필드에 추가
     });
     console.log("Post created successfully!");
   } catch (error) {
@@ -21,7 +22,7 @@ async function createPost(postData) {
 async function getAllPosts() {
   try {
     // 모든 게시물을 Firestore에서 가져옵니다.
-    const snapshot = await postsCollection.get();
+    const snapshot = await postsCollection.orderBy("createdAt", "desc").get();
     const posts = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
     return posts;
   } catch (error) {
