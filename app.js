@@ -1,9 +1,5 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-
-const { initializeApp } = require("firebase-admin/app");
-const { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } = require("firebase-admin/auth");
-const serviceAccount = require('./serviceAccountKey.json');
+const express = require("express");
+const bodyParser = require("body-parser");
 const app = express();
 
 var admin = require("firebase-admin");
@@ -16,19 +12,12 @@ admin.initializeApp({
     "https://hanbat-capstone-d4979-default-rtdb.asia-southeast1.firebasedatabase.app",
 });
 
-
-
-const firebaseApp = initializeApp(firebaseConfig);
-const auth = getAuth(firebaseApp);
-const db = admin.firestore(); // Firestore 인스턴스 생성
-
-
-   
-
+// 미들웨어 설정
+app.use(bodyParser.json());
 
 // 라우트 예시
 app.get("/", (req, res) => {
-  res.send("Hello World!");
+  res.send("성공!");
 });
 
 // 게시판 라우트를 분리한 파일을 추가
