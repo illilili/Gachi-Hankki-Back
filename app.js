@@ -1,6 +1,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const app = express();
+const boardRouter = require('./routes/boardRouter');
 
 var admin = require("firebase-admin");
 
@@ -14,6 +15,11 @@ admin.initializeApp({
 
 // 미들웨어 설정
 app.use(bodyParser.json());
+
+
+// boardRouter를 Express 애플리케이션에 등록
+app.use("/board", boardRouter);
+
 
 // 라우트 예시
 app.get("/", (req, res) => {
