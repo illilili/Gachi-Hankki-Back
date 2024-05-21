@@ -1,8 +1,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const app = express();
-const boardRouter = require('./routes/boardRouter');
-
+const loginRouter = require('./routes/loginRouter'); 
 var admin = require("firebase-admin");
 
 var serviceAccount = require("./serviceAccountKey.json");
@@ -17,8 +16,8 @@ admin.initializeApp({
 app.use(bodyParser.json());
 
 
-// boardRouter를 Express 애플리케이션에 등록
-app.use("/board", boardRouter);
+// loginRouter를 Express 애플리케이션에 등록
+app.use("/login", loginRouter);
 
 
 // 라우트 예시
