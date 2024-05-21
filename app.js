@@ -23,8 +23,13 @@ app.get("/", (req, res) => {
 const boardRouter = require("./routes/boardRouter.js");
 app.use("/board", boardRouter);
 
+// 로그인 라우터
 const loginRouter = require("./routes/loginRouter.js");
 app.use("/login", loginRouter);
+
+// 회원가입 라우터 
+const signupRouter = require("/Users/jo-eunhyeong/Gachi-Hankki-Back-test/routes/signupRouter.js");
+app.use("/signup", signupRouter);
 
 // 서버 시작
 const PORT = process.env.PORT || 3000;
