@@ -7,7 +7,7 @@ const serviceAccount = require('./serviceAccountKey.json');
 
 const firebaseApp = admin.initializeApp(firebaseConfig);
 const auth = admin.auth();
-const db = admin.firestore(); // Firestore 인스턴스 생성
+const db = admin.firestore();
 
 // 회원가입 핸들러
 exports.signup = async (req, res) => {
