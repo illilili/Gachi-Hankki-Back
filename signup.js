@@ -5,10 +5,7 @@ const jwt = require('jsonwebtoken');
 const admin = require('firebase-admin');
 const { createUserWithEmailAndPassword } = require("firebase-admin/auth");
 const serviceAccount = require('./serviceAccountKey.json');
-
 const router = express.Router();
-
-
 const firebaseApp = admin.initializeApp(firebaseConfig);
 const auth = admin.auth();
 const db = admin.firestore(); 

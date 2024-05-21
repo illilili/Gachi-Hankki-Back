@@ -1,8 +1,6 @@
 const jwt = require("jsonwebtoken");
 const admin = require("firebase-admin");
 const { signInWithEmailAndPassword } = require("firebase-admin/auth");
-
-
 const firebaseApp = admin.initializeApp(firebaseConfig);
 const auth = admin.auth();
 
