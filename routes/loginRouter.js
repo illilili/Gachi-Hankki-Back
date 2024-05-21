@@ -53,4 +53,23 @@ router.post('/signup', async (req, res) => {
   }
 });
 
+// 로그인 엔드포인트
+router.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Firebase Authentication을 사용하여 로그인
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+
+    // 로그인 성공 시 토큰 발급
+    const token = jwt.sign({ userId: user.uid }, 'your_secret_key', { expiresIn: '1h' });
+    res.status(200).json({ token });
+  } catch (error) {
+    console.error('Error logging in:', error);
+    res.status(401).send('Invalid email or password');
+  }
+});
+
+
 module.exports = router;
