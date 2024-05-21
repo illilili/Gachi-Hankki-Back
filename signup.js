@@ -8,20 +8,10 @@ const serviceAccount = require('./serviceAccountKey.json');
 
 const router = express.Router();
 
-// Firebase 앱 초기화
-const firebaseConfig = {
-    apiKey: "AIzaSyDVOW_tka935YrTMqwm70Gl-4lS1YUU9g8",
-    authDomain: "hanbat-capstone-d4979.firebaseapp.com",
-    databaseURL: "https://hanbat-capstone-d4979-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "hanbat-capstone-d4979",
-    storageBucket: "hanbat-capstone-d4979.appspot.com",
-    messagingSenderId: "161505895450",
-    appId: "1:161505895450:web:fe658dcb1756204a52dda3",
-    measurementId: "G-XXLVKW595N",
-};
+
 const firebaseApp = admin.initializeApp(firebaseConfig);
 const auth = admin.auth();
-const db = admin.firestore(); // Firestore 인스턴스 생성
+const db = admin.firestore(); 
 
 // 회원가입 엔드포인트
 router.post('/signup', async (req, res) => {
