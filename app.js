@@ -3,7 +3,8 @@ const bodyParser = require("body-parser");
 const app = express();
 var admin = require("firebase-admin");
 
-var serviceAccount = require("./serviceAccountKey.json");
+var serviceAccount = require("/Users/jo-eunhyeong/Gachi-Hankki-Back-test/serviceAccountKey.json");
+
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
@@ -19,17 +20,15 @@ app.get("/", (req, res) => {
   res.send("성공!");
 });
 
-// 게시판 라우트를 분리한 파일을 추가
-const boardRouter = require("./routes/boardRouter.js");
-app.use("/board", boardRouter);
 
-// 로그인 라우터
+// 회원가입 라우터 추가
+const signupRouter = require("./routes/signupRouter.js");
+app.use("/signup", signupRouter);
+
+
+// 로그인 라우터 추가
 const loginRouter = require("./routes/loginRouter.js");
 app.use("/login", loginRouter);
-
-// 회원가입 라우터 
-const signupRouter = require("/Users/jo-eunhyeong/Gachi-Hankki-Back-test/routes/signupRouter.js");
-app.use("/signup", signupRouter);
 
 // 서버 시작
 const PORT = process.env.PORT || 3000;
