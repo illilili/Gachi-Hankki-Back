@@ -1,8 +1,8 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const app = express();
-var admin = require("firebase-admin");
 
+var admin = require("firebase-admin");
 var serviceAccount = require("./serviceAccountKey.json");
 
 admin.initializeApp({
@@ -23,6 +23,7 @@ app.get("/", (req, res) => {
 const boardRouter = require("./routes/boardRouter.js");
 app.use("/board", boardRouter);
 
+// 로그인 라우트
 const loginRouter = require("./routes/loginRouter.js");
 app.use("/login", loginRouter);
 
