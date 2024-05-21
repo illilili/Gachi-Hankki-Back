@@ -1,8 +1,9 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const LoginController = require('/Users/jo-eunhyeong/Gachi-Hankki-Back-test/controllers/LoginController');
+const LoginController = require("../controllers/LoginController");
 
-router.post('/login', LoginController.login);
+router.post('/', LoginController.login);
 
 module.exports = router;
+
 
