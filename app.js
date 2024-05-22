@@ -3,8 +3,7 @@ const bodyParser = require("body-parser");
 const app = express();
 var admin = require("firebase-admin");
 
-var serviceAccount = require("/Users/jo-eunhyeong/Gachi-Hankki-Back-test/serviceAccountKey.json");
-
+var serviceAccount = require("./serviceAccountKey.json");
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
