@@ -7,10 +7,10 @@ const db = admin.firestore();
 
 exports.signup = async (req, res) => {
   try {
-    const { hanbatEmail, password, confirmPassword, name, gender, department, birthdate, purpose, path } = req.body;
+    const { email, password, confirmPassword, name, gender, department, birthdate, purpose, path } = req.body;
 
     // 필수 필드 유효성 검사
-    if (!hanbatEmail || !password || !confirmPassword) {
+    if (!email || !password || !confirmPassword) {
       return res.status(400).send('한밭대 이메일, 비밀번호, 비밀번호 확인은 필수 입력 사항입니다.');
     }
 
@@ -24,7 +24,7 @@ exports.signup = async (req, res) => {
 
     // Firebase Authentication을 사용하여 회원가입
     const userRecord = await auth.createUser({
-      email: hanbatEmail,
+      email: email,
       password: hashedPassword
     });
 
@@ -33,13 +33,14 @@ exports.signup = async (req, res) => {
 
     // 파이어베이스에 추가 정보 저장
     await db.collection('users').doc(userRecord.uid).set({
+      email,
       name,
       gender,
       department,
       birthdate,
       purpose,
       path,
-      passwordHash: hashedPassword // 비밀번호 해시 저장
+      passwordHash: hashedPassword
     });
 
     console.log('Additional information saved for user:', userRecord.uid);
