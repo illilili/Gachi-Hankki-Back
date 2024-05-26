@@ -18,12 +18,13 @@ app.use(bodyParser.json());
 app.get("/", (req, res) => {
   res.send("성공!");
 });
-
+// 게시판 라우터
+const boardRouter = require("./routes/boardRouter.js");
+app.use("/board", boardRouter);
 
 // 회원가입 라우터 추가
 const signupRouter = require("./routes/signupRouter.js");
 app.use("/signup", signupRouter);
-
 
 // 로그인 라우터 추가
 const loginRouter = require("./routes/loginRouter.js");
