@@ -1,8 +1,6 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const app = express();
-const boardRouter = require('./routes/boardRouter');
-
 var admin = require("firebase-admin");
 
 var serviceAccount = require("./serviceAccountKey.json");
@@ -16,20 +14,18 @@ admin.initializeApp({
 // 미들웨어 설정
 app.use(bodyParser.json());
 
-
-// boardRouter를 Express 애플리케이션에 등록
-app.use("/board", boardRouter);
-
-
 // 라우트 예시
 app.get("/", (req, res) => {
   res.send("성공!");
 });
 
-// 게시판 라우트를 분리한 파일을 추가
-const boardRouter = require("./routes/boardRouter.js");
-app.use("/board", boardRouter);
 
+// 회원가입 라우터 추가
+const signupRouter = require("./routes/signupRouter.js");
+app.use("/signup", signupRouter);
+
+
+// 로그인 라우터 추가
 const loginRouter = require("./routes/loginRouter.js");
 app.use("/login", loginRouter);
 
