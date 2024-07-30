@@ -23,11 +23,15 @@ app.get("/", (req, res) => {
 const boardRouter = require("./routes/boardRouter.js");
 app.use("/board", boardRouter);
 
-// 회원가입 라우터 추가
+// 이메일 인증 라우터
+const emailVerificationRouter = require("./routes/emailVerificationRouter");
+app.use("/email-verification", emailVerificationRouter);
+
+// 회원가입 라우터 
 const signupRouter = require("./routes/signupRouter.js");
 app.use("/signup", signupRouter);
 
-// 로그인 라우터 추가
+// 로그인 라우터 
 const loginRouter = require("./routes/loginRouter.js");
 app.use("/login", loginRouter);
 
