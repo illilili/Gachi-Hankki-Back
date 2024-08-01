@@ -7,6 +7,7 @@ var serviceAccount = require("./serviceAccountKey.json");
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
+  storageBucket: "hanbat-capstone-d4979.appspot.com",
   databaseURL:
     "https://hanbat-capstone-d4979-default-rtdb.asia-southeast1.firebasedatabase.app",
 });
@@ -22,13 +23,21 @@ app.get("/", (req, res) => {
 const boardRouter = require("./routes/boardRouter.js");
 app.use("/board", boardRouter);
 
-// 회원가입 라우터 추가
+// 이메일 인증 라우터
+const emailVerificationRouter = require("./routes/emailVerificationRouter");
+app.use("/email-verification", emailVerificationRouter);
+
+// 회원가입 라우터
 const signupRouter = require("./routes/signupRouter.js");
 app.use("/signup", signupRouter);
 
-// 로그인 라우터 추가
+// 로그인 라우터
 const loginRouter = require("./routes/loginRouter.js");
 app.use("/login", loginRouter);
+
+// 프로필 설정 라우터
+const profileRouter = require("./routes/profileRouter.js");
+app.use("/profile", profileRouter);
 
 // 서버 시작
 const PORT = process.env.PORT || 3000;
