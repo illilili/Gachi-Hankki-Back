@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const multer = require("multer");
 const postController = require("../controllers/postController");
+const commentsRouter = require("./commentsRouter"); // 댓글 라우터 가져오기
 
 // Multer 설정 (이미지)
 const upload = multer({
@@ -25,5 +26,8 @@ router.put("/:id", postController.updatePost);
 
 // 게시글 삭제
 router.delete("/:id", postController.deletePost);
+
+// 댓글 라우터
+router.use("/:postId/comments", commentsRouter);
 
 module.exports = router;

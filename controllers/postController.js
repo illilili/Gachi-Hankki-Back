@@ -1,13 +1,32 @@
 const admin = require("firebase-admin");
+const moment = require("moment-timezone");
 const db = admin.firestore();
 
 // 게시글 작성
 exports.createPost = async (req, res) => {
   try {
-    const { title, content } = req.body;
+    const {
+      PostTitle,
+      RestaurantName,
+      PromiseDate,
+      PromiseTime,
+      PatMethod,
+      NumberOfParticipants, // 모집 인원
+      PostContent,
+      UserNum,
+      NickName,
+    } = req.body;
+
+    // 필수 필드 확인
+    if (!PostTitle || !PostContent) {
+      return res
+        .status(400)
+        .json({ error: "PostTitle and PostContent are required." });
+    }
+
     const file = req.file;
     const bucket = admin.storage().bucket();
-    let imageUrl = null;
+    let Attachment = null;
 
     if (file) {
       const fileName = `${Date.now()}_${file.originalname}`;
@@ -26,14 +45,21 @@ exports.createPost = async (req, res) => {
       });
 
       stream.on("finish", async () => {
-        imageUrl = `https://storage.googleapis.com/${bucket.name}/${fileUpload.name}`;
+        Attachment = `https://storage.googleapis.com/${bucket.name}/${fileUpload.name}`;
 
         try {
           const post = {
-            title,
-            content,
-            imageUrl,
-            createdAt: new Date().toISOString(),
+            PostTitle,
+            PostDate: moment().tz("Asia/Seoul").format(),
+            RestaurantName,
+            PromiseDate,
+            PromiseTime,
+            PatMethod,
+            NumberOfParticipants,
+            PostContent,
+            Attachment,
+            UserNum,
+            NickName,
           };
           const docRef = await db.collection("posts").add(post);
           res
@@ -48,9 +74,17 @@ exports.createPost = async (req, res) => {
     } else {
       try {
         const post = {
-          title,
-          content,
-          createdAt: new Date().toISOString(),
+          PostTitle,
+          PostDate: new Date().toISOString(),
+          RestaurantName,
+          PromiseDate,
+          PromiseTime,
+          PatMethod,
+          NumberOfParticipants,
+          PostContent,
+          Attachment,
+          UserNum,
+          NickName,
         };
         const docRef = await db.collection("posts").add(post);
         res
@@ -70,7 +104,7 @@ exports.getAllPosts = async (req, res) => {
   try {
     const postsSnapshot = await db
       .collection("posts")
-      .orderBy("createdAt", "desc") // 최신순 정렬
+      .orderBy("PostDate", "desc")
       .get();
     const posts = [];
     postsSnapshot.forEach((doc) => {
