@@ -24,12 +24,6 @@ app.get("/", (req, res) => {
 const boardRouter = require("./routes/boardRouter.js");
 app.use("/board", boardRouter);
 
-// app.post("/board/:boardId/comments", (req, res) => {
-//   const boardId = req.params.boardId;
-//   const { content, userNum, nickName } = req.body;
-//   res.send(`Comment received for board ${boardId}`);
-// });
-
 // 이메일 인증 라우터
 const emailVerificationRouter = require("./routes/emailVerificationRouter.js");
 app.use("/email-verification", emailVerificationRouter);
