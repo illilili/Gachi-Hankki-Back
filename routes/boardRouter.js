@@ -1,15 +1,13 @@
 const express = require("express");
 const router = express.Router();
 const multer = require("multer");
-const postController = require("../controllers/postController");
-const commentsRouter = require("./commentsRouter"); // 댓글 라우터 가져오기
+const postController = require("../controllers/postController.js");
+const commentsController = require("../controllers/commentsController.js");
 
 // Multer 설정 (이미지)
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: {
-    fileSize: 5 * 1024 * 1024, // 파일 크기 제한 (5MB)
-  },
+  limits: { fileSize: 5 * 1024 * 1024 }, // 파일 크기 제한 (5MB)
 });
 
 // 게시글 작성
@@ -27,7 +25,10 @@ router.put("/:id", postController.updatePost);
 // 게시글 삭제
 router.delete("/:id", postController.deletePost);
 
-// 댓글 라우터
-router.use("/:postId/comments", commentsRouter);
+// 댓글 작성
+router.post("/:postId/comments", commentsController.addComment);
+
+// 댓글 조회
+router.get("/:postId/comments", commentsController.getComments);
 
 module.exports = router;
