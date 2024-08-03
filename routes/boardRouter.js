@@ -31,4 +31,16 @@ router.post("/:postId/comments", commentsController.addComment);
 // 댓글 조회
 router.get("/:postId/comments", commentsController.getComments);
 
+// 대댓글 추가
+router.post(
+  "/:postId/comments/:commentId/replies",
+  commentsController.addReply
+);
+
+// 대댓글 조회
+router.get(
+  "/:postId/comments/:commentId/replies",
+  commentsController.getReplies
+);
+
 module.exports = router;
