@@ -31,6 +31,9 @@ router.post("/:postId/comments", commentsController.addComment);
 // 댓글 조회
 router.get("/:postId/comments", commentsController.getComments);
 
+// 댓글 삭제
+router.delete("/:postId/comments/:commentId", commentsController.deleteComment);
+
 // 대댓글 추가
 router.post(
   "/:postId/comments/:commentId/replies",
@@ -43,4 +46,9 @@ router.get(
   commentsController.getReplies
 );
 
+// 대댓글 삭제
+router.delete(
+  "/:postId/comments/:commentId/replies/:replyId",
+  commentsController.deleteReply
+);
 module.exports = router;

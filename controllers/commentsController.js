@@ -77,6 +77,32 @@ const getComments = async (req, res) => {
   }
 };
 
+// 댓글 삭제
+const deleteComment = async (req, res) => {
+  try {
+    const { postId, commentId } = req.params;
+
+    if (!postId || !commentId) {
+      return res
+        .status(400)
+        .json({ error: "postId와 commentId가 필요합니다." });
+    }
+
+    const commentRef = db
+      .collection("posts")
+      .doc(postId)
+      .collection("comments")
+      .doc(commentId);
+
+    await commentRef.delete();
+
+    res.status(200).json({ message: "댓글이 삭제되었습니다." });
+  } catch (error) {
+    console.error("Error deleting comment:", error);
+    res.status(500).json({ error: "댓글 삭제 중 오류가 발생했습니다." });
+  }
+};
+
 // 댓글에 대댓글 추가
 const addReply = async (req, res) => {
   try {
@@ -157,4 +183,39 @@ const getReplies = async (req, res) => {
   }
 };
 
-module.exports = { addComment, getComments, addReply, getReplies };
+// 대댓글 삭제
+const deleteReply = async (req, res) => {
+  try {
+    const { postId, commentId, replyId } = req.params;
+
+    if (!postId || !commentId || !replyId) {
+      return res
+        .status(400)
+        .json({ error: "postId, commentId, replyId가 필요합니다." });
+    }
+
+    const replyRef = db
+      .collection("posts")
+      .doc(postId)
+      .collection("comments")
+      .doc(commentId)
+      .collection("replies")
+      .doc(replyId);
+
+    await replyRef.delete();
+
+    res.status(200).json({ message: "대댓글이 삭제되었습니다." });
+  } catch (error) {
+    console.error("Error deleting reply:", error);
+    res.status(500).json({ error: "대댓글 삭제 중 오류가 발생했습니다." });
+  }
+};
+
+module.exports = {
+  addComment,
+  getComments,
+  deleteComment,
+  addReply,
+  getReplies,
+  deleteReply,
+};
