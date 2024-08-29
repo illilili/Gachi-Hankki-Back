@@ -3,6 +3,7 @@ const router = express.Router();
 const multer = require("multer");
 const postController = require("../controllers/postController.js");
 const commentsController = require("../controllers/commentsController.js");
+const authenticateToken = require("../middlewares/authenticateToken.js");
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -11,14 +12,15 @@ const upload = multer({
     if (file.fieldname === "image") {
       cb(null, true);
     } else {
-      cb(new MulterError("Unexpected field"), false);
+      cb(new Error("Unexpected field"), false);
     }
   },
   limits: { fileSize: 10 * 1024 * 1024 }, // 파일 크기 제한 (10MB)
 });
 
+
 // 게시글 작성
-router.post("/", upload.single("image"), postController.createPost);
+router.post("/", upload.single("image"), authenticateToken, postController.createPost);
 
 // 게시글 목록 조회
 router.get("/", postController.getAllPosts);
@@ -27,10 +29,10 @@ router.get("/", postController.getAllPosts);
 router.get("/:id", postController.getPostById);
 
 // 게시글 수정
-router.put("/:id", postController.updatePost);
+router.put("/:id", authenticateToken, postController.updatePost);
 
 // 게시글 삭제
-router.delete("/:id", postController.deletePost);
+router.delete("/:id", authenticateToken, postController.deletePost);
 
 // 댓글 작성
 router.post("/:postId/comments", commentsController.addComment);

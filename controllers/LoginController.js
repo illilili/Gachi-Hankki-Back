@@ -2,14 +2,16 @@ const admin = require('firebase-admin');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { validateHanbatEmail } = require('../utils/validators');
+const authenticateToken = require("../middlewares/authenticateToken.js");
+
 
 const auth = admin.auth();
 const db = admin.firestore();
 
 
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
-const REFRESH_TOKEN_SECRET =  process.env.REFRESH_TOKEN_SECRET;
-const REFRESH_TOKEN_EXPIRATION = process.env.REFRESH_TOKEN_EXPIRATION || '60d'; 
+const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET;
+const REFRESH_TOKEN_EXPIRATION = process.env.REFRESH_TOKEN_EXPIRATION || '60d';
 
 exports.login = async (req, res) => {
   try {

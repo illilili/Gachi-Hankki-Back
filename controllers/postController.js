@@ -2,9 +2,20 @@ const admin = require("firebase-admin");
 const moment = require("moment-timezone");
 const db = admin.firestore();
 
+
 // 게시글 작성
 exports.createPost = async (req, res) => {
   try {
+    console.log("Request user in createPost:", req.user); // 로그 추가
+
+    const uid = req.user ? req.user.uid : null;
+    console.log("User ID (uid):", uid); // uid 로그
+
+    if (!uid) {
+      console.log("User ID (uid) is missing");
+      return res.status(400).json({ error: '사용자 정보가 필요합니다.' });
+    }
+
     const {
       PostTitle,
       RestaurantName,
@@ -13,9 +24,32 @@ exports.createPost = async (req, res) => {
       PatMethod,
       NumberOfParticipants, // 모집 인원
       PostContent,
-      UserNum,
-      NickName,
     } = req.body;
+
+
+    // uid를 사용하여 users 컬렉션에서 사용자 문서를 가져옵니다.
+    const userDoc = await db.collection('users').doc(uid).get();
+    if (!userDoc.exists) {
+      console.log("User document not found for uid:", uid);
+      return res.status(404).json({ error: '사용자 정보를 찾을 수 없습니다.' });
+    }
+
+    // 사용자 정보를 가져온 후, userprofile에서 닉네임을 가져옵니다.
+    const userProfileDoc = await db.collection('userProfile').doc(uid).get();
+    if (!userProfileDoc.exists) {
+      console.log("User profile not found for uid:", uid);
+      return res.status(404).json({ error: '사용자 프로필을 찾을 수 없습니다.' });
+    }
+
+    const userProfileData = userProfileDoc.data();
+    console.log("User profile data:", userProfileData); // 로그 추가
+    const Nickname = userProfileData ? userProfileData.Nickname : null;
+
+    if (!Nickname) {
+      console.log("NickName is missing in userProfile");
+      return res.status(404).json({ error: '사용자 닉네임을 찾을 수 없습니다.' });
+    }
+
 
     // 필수 필드 확인
     if (!PostTitle || !PostContent) {
@@ -59,8 +93,8 @@ exports.createPost = async (req, res) => {
             NumberOfParticipants,
             PostContent,
             Attachment,
-            UserNum,
-            NickName,
+            UserNum: uid,
+            Nickname,
           };
           const docRef = await db.collection("posts").add(post);
           res
@@ -84,8 +118,8 @@ exports.createPost = async (req, res) => {
           NumberOfParticipants,
           PostContent,
           Attachment,
-          UserNum,
-          NickName,
+          UserNum: uid,
+          Nickname,
         };
         const docRef = await db.collection("posts").add(post);
         res
@@ -136,7 +170,22 @@ exports.getPostById = async (req, res) => {
 exports.updatePost = async (req, res) => {
   try {
     const postId = req.params.id;
+    const uid = req.user.uid;
     const updateData = req.body;
+
+    // 게시글 문서 가져오기
+    const postDoc = await db.collection("posts").doc(postId).get();
+    if (!postDoc.exists) {
+      return res.status(404).json({ message: "게시글을 찾을 수 없습니다." });
+    }
+
+    const post = postDoc.data();
+
+    // 게시글 작성자 확인
+    if (post.UserNum !== uid) {
+      return res.status(403).json({ message: "권한이 없습니다. 이 게시글을 수정할 수 없습니다." });
+    }
+
     await db.collection("posts").doc(postId).update(updateData);
     res.json({ message: "게시글이 수정되었습니다." });
   } catch (error) {
@@ -148,6 +197,18 @@ exports.updatePost = async (req, res) => {
 exports.deletePost = async (req, res) => {
   try {
     const postId = req.params.id;
+    const uid = req.user.uid;
+    const postDoc = await db.collection("posts").doc(postId).get();
+    if (!postDoc.exists) {
+      return res.status(404).json({ message: "게시글을 찾을 수 없습니다." });
+    }
+    const post = postDoc.data();
+
+    // 게시글 작성자 확인
+    if (post.UserNum !== uid) {
+      return res.status(403).json({ message: "권한이 없습니다. 이 게시글을 삭제할 수 없습니다." });
+    }
+
     await db.collection("posts").doc(postId).delete();
     res.json({ message: "게시글이 삭제되었습니다." });
   } catch (error) {

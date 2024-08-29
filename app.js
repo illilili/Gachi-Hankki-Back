@@ -3,7 +3,9 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const app = express();
 var admin = require("firebase-admin");
+const jwt = require('jsonwebtoken');
 var serviceAccount = require("./serviceAccountKey.json");
+const authenticateToken = require("./middlewares/authenticateToken.js");
 
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET;
@@ -18,6 +20,8 @@ admin.initializeApp({
 
 // 미들웨어 설정
 app.use(bodyParser.json());
+
+
 
 // 라우트 예시
 app.get("/", (req, res) => {
@@ -43,6 +47,16 @@ app.use("/", loginRouter);
 // 프로필 설정 라우터
 const profileRouter = require("./routes/profileRouter.js");
 app.use("/profile", profileRouter);
+
+
+// 테스트 엔드포인트
+app.get('/test', authenticateToken, (req, res) => {
+  console.log('User object:', req.user); // 로그 추가
+  if (!req.user || !req.user.uid) {
+    return res.status(401).json({ error: 'User ID is not found in token.' });
+  }
+  res.json({ message: 'Token is valid!', user: req.user });
+});
 
 // 서버 시작
 const PORT = process.env.PORT || 3000;

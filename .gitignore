@@ -63,7 +63,7 @@ node_modules/
 .yarn-integrity
 
 # dotenv environment variables file
-.env
+# .env
 
 # Firebase service account key file
 serviceAccountKey.json
@@ -71,3 +71,4 @@ serviceAccountKey.json
 # Node.js dependencies
 node_modules/
 package-lock.json
+package.json

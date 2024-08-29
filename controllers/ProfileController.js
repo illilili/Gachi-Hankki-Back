@@ -25,16 +25,16 @@ const profileImageMap = {
 exports.createProfile = async (req, res) => {
   try {
     const { userId } = req.params;
-    const { nickname, bio, profileImageUrl, profileImageNumber } = req.body;
+    const { Nickname, bio, profileImageUrl, profileImageNumber } = req.body;
 
     // 닉네임 중복 확인
-    const existingProfileQuery = await db.collection('userProfile').where('nickname', '==', nickname).get();
+    const existingProfileQuery = await db.collection('userProfile').where('Nickname', '==', NamedNodeMapickname).get();
     if (!existingProfileQuery.empty) {
       return res.status(400).json({ message: 'Nickname already in use' });
     }
 
     const userProfile = {
-      nickname,
+      Nickname,
       bio,
     };
 
@@ -49,7 +49,7 @@ exports.createProfile = async (req, res) => {
         return res.status(400).json({ message: 'Invalid profile image URL' });
       }
     } else {
-      
+
       userProfile.profileImageNumber = 1;
     }
 
