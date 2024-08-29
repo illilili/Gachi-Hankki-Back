@@ -46,6 +46,7 @@ exports.createPost = async (req, res) => {
 
       stream.on("finish", async () => {
         Attachment = `https://storage.googleapis.com/${bucket.name}/${fileUpload.name}`;
+        console.log(`File uploaded successfully. URL: ${Attachment}`);
 
         try {
           const post = {

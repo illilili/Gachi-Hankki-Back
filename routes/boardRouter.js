@@ -4,10 +4,17 @@ const multer = require("multer");
 const postController = require("../controllers/postController.js");
 const commentsController = require("../controllers/commentsController.js");
 
-// Multer 설정 (이미지)
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 }, // 파일 크기 제한 (5MB)
+  fileFilter: (req, file, cb) => {
+    console.log("File field name:", file.fieldname); // 필드 이름 로그
+    if (file.fieldname === "image") {
+      cb(null, true);
+    } else {
+      cb(new MulterError("Unexpected field"), false);
+    }
+  },
+  limits: { fileSize: 10 * 1024 * 1024 }, // 파일 크기 제한 (10MB)
 });
 
 // 게시글 작성
