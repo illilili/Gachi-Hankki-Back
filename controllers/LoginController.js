@@ -20,14 +20,14 @@ exports.login = async (req, res) => {
       return res.status(400).send("이메일과 비밀번호를 입력해주세요.");
     }
 
-    // Firebase Authentication에서 사용자 정보를 가져옵니다.
+    // Firebase Authentication에서 사용자 정보를 가져오기
     const userRecord = await auth.getUserByEmail(email);
 
     if (!userRecord) {
       return res.status(400).send("이메일 또는 비밀번호가 올바르지 않습니다.");
     }
 
-    // Firestore에서 추가 정보를 가져옵니다.
+    // Firestore에서 추가 정보를 가져오기
     const userDoc = await db.collection("users").doc(userRecord.uid).get();
     const userData = userDoc.data();
 
