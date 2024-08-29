@@ -1,9 +1,13 @@
+require('dotenv').config();
 const express = require("express");
 const bodyParser = require("body-parser");
 const app = express();
 var admin = require("firebase-admin");
-
 var serviceAccount = require("./serviceAccountKey.json");
+
+const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
+const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET;
+const REFRESH_TOKEN_EXPIRATION = process.env.REFRESH_TOKEN_EXPIRATION || '60d';
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),

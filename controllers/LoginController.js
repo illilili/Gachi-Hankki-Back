@@ -7,9 +7,9 @@ const auth = admin.auth();
 const db = admin.firestore();
 
 
-const ACCESS_TOKEN_SECRET = 'supersecretaccesskeythatissufficientlylongandcomplex';
-const REFRESH_TOKEN_SECRET = 'anothersecretkeyforrefreshtokens';
-const REFRESH_TOKEN_EXPIRATION = '60d'; 
+const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
+const REFRESH_TOKEN_SECRET =  process.env.REFRESH_TOKEN_SECRET;
+const REFRESH_TOKEN_EXPIRATION = process.env.REFRESH_TOKEN_EXPIRATION || '60d'; 
 
 exports.login = async (req, res) => {
   try {

@@ -67,3 +67,7 @@ node_modules/
 
 # Firebase service account key file
 serviceAccountKey.json
+
+package-lock.json
+
+package.json

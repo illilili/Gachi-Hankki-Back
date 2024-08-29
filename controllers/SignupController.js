@@ -6,7 +6,7 @@ const { validateHanbatEmail } = require('../utils/validators');
 const auth = admin.auth();
 const db = admin.firestore();
 
-const ACCESS_TOKEN_SECRET = 'supersecretaccesskeythatissufficientlylongandcomplex';
+const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
 
 exports.signup = async (req, res) => {
   try {
