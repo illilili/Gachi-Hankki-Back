@@ -68,6 +68,6 @@ node_modules/
 # Firebase service account key file
 serviceAccountKey.json
 
+# Node.js dependencies
+node_modules/
 package-lock.json
-
-package.json
