@@ -34,7 +34,7 @@ app.use("/signup", signupRouter);
 
 // 로그인 라우터
 const loginRouter = require("./routes/loginRouter.js");
-app.use("/login", loginRouter);
+app.use("/", loginRouter);
 
 // 프로필 설정 라우터
 const profileRouter = require("./routes/profileRouter.js");
