@@ -3,6 +3,7 @@ const router = express.Router();
 const multer = require("multer");
 const postController = require("../controllers/postController.js");
 const commentsController = require("../controllers/commentsController.js");
+const replyController = require("../controllers/replyController.js");
 const authenticateToken = require("../middlewares/authenticateToken.js");
 
 const upload = multer({
@@ -34,30 +35,13 @@ router.put("/:id", authenticateToken, postController.updatePost);
 // 게시글 삭제
 router.delete("/:id", authenticateToken, postController.deletePost);
 
-// 댓글 작성
-router.post("/:postId/comments", commentsController.addComment);
+// 댓글 관련 라우트
+router.post("/:postId/comments", authenticateToken, commentsController.addComment); // 댓글 작성
+router.get("/:postId/comments", commentsController.getComments); // 댓글 조회
+router.delete("/:postId/comments/:commentId", authenticateToken, commentsController.deleteComment); // 댓글 삭제
 
-// 댓글 조회
-router.get("/:postId/comments", commentsController.getComments);
-
-// 댓글 삭제
-router.delete("/:postId/comments/:commentId", commentsController.deleteComment);
-
-// 대댓글 추가
-router.post(
-  "/:postId/comments/:commentId/replies",
-  commentsController.addReply
-);
-
-// 대댓글 조회
-router.get(
-  "/:postId/comments/:commentId/replies",
-  commentsController.getReplies
-);
-
-// 대댓글 삭제
-router.delete(
-  "/:postId/comments/:commentId/replies/:replyId",
-  commentsController.deleteReply
-);
+// 대댓글 관련 라우트
+router.post("/:postId/comments/:commentId/replies", authenticateToken, replyController.addReply); // 대댓글 작성
+router.get("/:postId/comments/:commentId/replies", replyController.getReplies); // 대댓글 조회
+router.delete("/:postId/comments/:commentId/replies/:replyId", authenticateToken, replyController.deleteReply); // 대댓글 삭제
 module.exports = router;
