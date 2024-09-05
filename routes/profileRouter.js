@@ -1,11 +1,11 @@
-const express = require("express");
+const express = require('express');
+const { createProfile, getProfile } = require('../controllers/profileController');
+const authenticateToken = require('../middlewares/authenticateToken'); 
+
 const router = express.Router();
-const ProfileController = require("../controllers/ProfileController");
 
-// 프로필 생성 라우트
-router.post("/:userId", ProfileController.createProfile);
+router.post('/', authenticateToken, createProfile);
 
-// 프로필 조회 라우트
-router.get("/:userId", ProfileController.getProfile);
+router.get('/', authenticateToken, getProfile);
 
 module.exports = router;
