@@ -18,8 +18,8 @@ const addReply = async (req, res) => {
 			return res.status(404).json({ error: "사용자 프로필을 찾을 수 없습니다." });
 		}
 
-		const Nickname = userProfileDoc.data().Nickname;
-		if (!Nickname) {
+		const nickname = userProfileDoc.data().nickname;
+		if (!nickname) {
 			return res.status(404).json({ error: "닉네임을 찾을 수 없습니다." });
 		}
 
@@ -31,7 +31,7 @@ const addReply = async (req, res) => {
 		const reply = {
 			content,
 			userNum: uid,
-			Nickname: Nickname,
+			nickname: nickname,
 			createdAt: admin.firestore.FieldValue.serverTimestamp(),
 		};
 
@@ -85,7 +85,7 @@ const getReplies = async (req, res) => {
 			return {
 				id: doc.id,
 				userNum: data.userNum,
-				nickName: data.nickName,
+				nickname: data.nickname,
 				content: data.content,
 				createdAt: koreaTime.toISOString(), // ISO 포맷으로 변환
 			};

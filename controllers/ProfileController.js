@@ -26,19 +26,19 @@ const profileImageMap = {
 // 프로필 생성
 exports.createProfile = async (req, res) => {
   try {
-    const { uid } = req.user; 
+    const { uid } = req.user;
     const { nickname, bio, profileImageUrl, profileImageNumber } = req.body;
 
     // 닉네임 중복 확인
     const existingProfileQuery = await db.collection('userProfile').where('nickname', '==', nickname).get();
     if (!existingProfileQuery.empty) {
-      return res.status(400).json({ message: 'Nickname already in use' });
+      return res.status(400).json({ message: 'nickname already in use' });
     }
 
     const userProfile = {
       nickname,
       bio,
-      profileImageNumber: 1 
+      profileImageNumber: 1
     };
 
     if (profileImageNumber) {
@@ -66,7 +66,7 @@ exports.createProfile = async (req, res) => {
 // 프로필 조회
 exports.getProfile = async (req, res) => {
   try {
-    const { uid } = req.user;  
+    const { uid } = req.user;
     const userDoc = await db.collection('userProfile').doc(uid).get();
 
     if (!userDoc.exists) {

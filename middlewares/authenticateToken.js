@@ -20,7 +20,9 @@ const authenticateToken = (req, res, next) => {
       console.log("Token Verification Error:", err.message); // 오류 로그
       return res.status(403).send('유효하지 않은 액세스 토큰입니다.');
     }
+
     console.log("Decoded Token User:", user);  // 추가된 로그
+
     if (!user || !user.uid) {
       return res.status(400).json({ error: '유효한 uid를 포함한 토큰이 필요합니다.' });
     }

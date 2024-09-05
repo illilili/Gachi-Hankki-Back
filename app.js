@@ -14,7 +14,7 @@ const REFRESH_TOKEN_EXPIRATION = process.env.REFRESH_TOKEN_EXPIRATION || '60d';
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
   storageBucket: "hanbat-capstone-d4979.appspot.com",
- databaseURL: "https://hanbat-capstone-d4979-default-rtdb.asia-southeast1.firebasedatabase.app" 
+  databaseURL: "https://hanbat-capstone-d4979-default-rtdb.asia-southeast1.firebasedatabase.app"
 });
 
 // 미들웨어 설정

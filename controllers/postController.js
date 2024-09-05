@@ -43,9 +43,9 @@ exports.createPost = async (req, res) => {
 
     const userProfileData = userProfileDoc.data();
     console.log("User profile data:", userProfileData); // 로그 추가
-    const Nickname = userProfileData ? userProfileData.Nickname : null;
+    const nickname = userProfileData ? userProfileData.nickname : null;
 
-    if (!Nickname) {
+    if (!nickname) {
       console.log("NickName is missing in userProfile");
       return res.status(404).json({ error: '사용자 닉네임을 찾을 수 없습니다.' });
     }
@@ -94,7 +94,7 @@ exports.createPost = async (req, res) => {
             PostContent,
             Attachment,
             UserNum: uid,
-            Nickname,
+            nickname,
           };
           const docRef = await db.collection("posts").add(post);
           res
@@ -119,7 +119,7 @@ exports.createPost = async (req, res) => {
           PostContent,
           Attachment,
           UserNum: uid,
-          Nickname,
+          nickname,
         };
         const docRef = await db.collection("posts").add(post);
         res
