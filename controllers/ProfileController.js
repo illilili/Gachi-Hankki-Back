@@ -84,9 +84,9 @@ exports.getProfile = async (req, res) => {
     const userDoc = await db.collection('users').doc(uid).get();
     if (userDoc.exists) {
       const userData = userDoc.data();
-      userProfile.department = userData.department; // 학과 정보 추가
+      userProfile.department = userData.department; 
     } else {
-      console.error("User department not found for uid:", uid); // 수정된 메시지
+      console.error("User department not found for uid:", uid); 
       return res.status(500).json({ message: 'Error retrieving department information' });
     }
 
