@@ -1,17 +1,15 @@
 const admin = require("firebase-admin");
-
-// Firebase Admin SDK로 Realtime Database 참조
 const db = admin.database();
 
 // 쪽지방 생성 함수
 exports.createRoom = async (req, res) => {
-  const { members } = req.body; // 요청에서 방 멤버들을 가져옴
+  const { members } = req.body; 
 
   try {
-    const roomRef = db.ref('ChatRooms').push(); // 새로운 방 생성
+    const roomRef = db.ref('ChatRooms').push(); 
     const roomId = roomRef.key; // 방 ID
 
-    // 방 정보를 데이터베이스에 저장
+    // 방 정보 저장
     await roomRef.set({
       roomId,
       members,
@@ -28,11 +26,11 @@ exports.createRoom = async (req, res) => {
 
 // 특정 방의 메시지 가져오기
 exports.getMessages = async (req, res) => {
-  const roomId = req.params.roomId; // 요청에서 방 ID를 가져옴
+  const roomId = req.params.roomId;
 
   try {
     const messagesRef = db.ref(`ChatRooms/${roomId}/messages`);
-    const snapshot = await messagesRef.once("value"); // Firebase Realtime Database에서 데이터 가져오기
+    const snapshot = await messagesRef.once("value"); 
 
     if (snapshot.exists()) {
       const messages = snapshot.val();
@@ -48,13 +46,13 @@ exports.getMessages = async (req, res) => {
 
 // 메시지 추가하기
 exports.addMessage = async (req, res) => {
-  const roomId = req.params.roomId; // 요청에서 방 ID를 가져옴
-  const newMessage = req.body.message; // 요청에서 메시지 내용 가져옴
+  const roomId = req.params.roomId; 
+  const newMessage = req.body.message; 
 
   try {
     const messagesRef = db.ref(`ChatRooms/${roomId}/messages`);
-    const newMessageRef = messagesRef.push(); // 새로운 메시지를 추가할 위치 참조
-    await newMessageRef.set(newMessage); // 새로운 메시지 저장
+    const newMessageRef = messagesRef.push(); 
+    await newMessageRef.set(newMessage); 
 
     res.status(201).json({ success: true, message: "메시지가 추가되었습니다." });
   } catch (error) {
@@ -65,7 +63,7 @@ exports.addMessage = async (req, res) => {
 
 // 쪽지방 삭제 함수
 exports.deleteRoom = async (req, res) => {
-  const roomId = req.params.roomId; // 요청에서 방 ID를 가져옴
+  const roomId = req.params.roomId; 
 
   try {
     const roomRef = db.ref(`ChatRooms/${roomId}`);
