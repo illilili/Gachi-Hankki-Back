@@ -49,11 +49,10 @@ exports.signup = async (req, res) => {
       }
       throw error;
     }
-
-    // 회원가입 성공 시 토큰 발급
+    
     const token = jwt.sign({ userId: userRecord.uid }, ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
 
-    // 파이어베이스에 추가 정보 저장
+    // 파이어베이스에 정보 저장
     await db.collection('users').doc(userRecord.uid).set({
       email,
       name,
