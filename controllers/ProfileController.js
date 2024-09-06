@@ -70,8 +70,7 @@ exports.getProfile = async (req, res) => {
   try {
     const { uid } = req.user;
     console.log("Fetching profile for uid:", uid);
-
-    // userProfile 문서에서 프로필 정보 가져오기
+    
     const userProfileDoc = await db.collection('userProfile').doc(uid).get();
     if (!userProfileDoc.exists) {
       console.log("Profile not found for uid:", uid);
