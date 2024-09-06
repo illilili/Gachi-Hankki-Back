@@ -1,5 +1,7 @@
 const admin = require('firebase-admin');
 const jwt = require('jsonwebtoken');
+
+// Firestore 인스턴스 초기화
 const db = admin.firestore();
 const authenticateToken = require("../middlewares/authenticateToken.js");
 
@@ -26,7 +28,7 @@ const profileImageMap = {
 // 프로필 생성
 exports.createProfile = async (req, res) => {
   try {
-    const { uid } = req.user;
+    const { uid } = req.user; 
     const { nickname, bio, profileImageUrl, profileImageNumber } = req.body;
 
     // 닉네임 중복 확인
@@ -38,7 +40,7 @@ exports.createProfile = async (req, res) => {
     const userProfile = {
       nickname,
       bio,
-      profileImageNumber: 1
+      profileImageNumber: 1 
     };
 
     if (profileImageNumber) {
@@ -67,13 +69,28 @@ exports.createProfile = async (req, res) => {
 exports.getProfile = async (req, res) => {
   try {
     const { uid } = req.user;
-    const userDoc = await db.collection('userProfile').doc(uid).get();
+    console.log("Fetching profile for uid:", uid);
 
-    if (!userDoc.exists) {
+    // userProfile 문서에서 프로필 정보 가져오기
+    const userProfileDoc = await db.collection('userProfile').doc(uid).get();
+    if (!userProfileDoc.exists) {
+      console.log("Profile not found for uid:", uid);
       return res.status(404).json({ message: 'Profile not found' });
     }
 
-    const userProfile = userDoc.data();
+    const userProfile = userProfileDoc.data();
+
+    // users 컬렉션에서 학과 정보 가져오기
+    const userDoc = await db.collection('users').doc(uid).get();
+    if (userDoc.exists) {
+      const userData = userDoc.data();
+      userProfile.department = userData.department; // 학과 정보 추가
+    } else {
+      console.error("User department not found for uid:", uid); // 수정된 메시지
+      return res.status(500).json({ message: 'Error retrieving department information' });
+    }
+
+    // 프로필 이미지 설정
     if (userProfile.profileImageNumber) {
       userProfile.profileImageUrl = profileImageMap[userProfile.profileImageNumber];
     }
