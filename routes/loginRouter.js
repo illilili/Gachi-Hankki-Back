@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const LoginController = require('../controllers/LoginController');
 
+
 // 기존 로그인 라우트
 router.post('/login', LoginController.login);
 

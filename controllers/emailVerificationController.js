@@ -6,10 +6,10 @@ const auth = admin.auth();
 const db = admin.firestore();
 
 const transporter = nodemailer.createTransport({
-  service: 'Gmail', 
+  service: 'Gmail',
   auth: {
-    user: '20212061@edu.hanbat.ac.kr', 
-    pass: 'jfyp rtpv zrid fbfg' 
+    user: '20212061@edu.hanbat.ac.kr',
+    pass: 'jfyp rtpv zrid fbfg'
   }
 });
 

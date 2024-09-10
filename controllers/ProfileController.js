@@ -1,5 +1,9 @@
 const admin = require('firebase-admin');
+const jwt = require('jsonwebtoken');
+
+// Firestore 인스턴스 초기화
 const db = admin.firestore();
+const authenticateToken = require("../middlewares/authenticateToken.js");
 
 // URL 매핑 정의
 const profileImageMap = {
@@ -24,65 +28,76 @@ const profileImageMap = {
 // 프로필 생성
 exports.createProfile = async (req, res) => {
   try {
-    const { userId } = req.params;
+    const { uid } = req.user; 
     const { nickname, bio, profileImageUrl, profileImageNumber } = req.body;
 
     // 닉네임 중복 확인
     const existingProfileQuery = await db.collection('userProfile').where('nickname', '==', nickname).get();
     if (!existingProfileQuery.empty) {
-      return res.status(400).json({ message: 'Nickname already in use' });
+      return res.status(400).json({ message: 'nickname already in use' });
     }
 
     const userProfile = {
       nickname,
       bio,
+      profileImageNumber: 1 
     };
 
     if (profileImageNumber) {
       userProfile.profileImageNumber = profileImageNumber;
     } else if (profileImageUrl) {
-      const profileImageNumber = Object.keys(profileImageMap).find(key => profileImageMap[key] === profileImageUrl);
-      if (profileImageNumber) {
-        userProfile.profileImageNumber = profileImageNumber;
+      const foundProfileImageNumber = Object.keys(profileImageMap).find(key => profileImageMap[key] === profileImageUrl);
+      if (foundProfileImageNumber) {
+        userProfile.profileImageNumber = foundProfileImageNumber;
       } else {
         console.error('Profile image URL not found in map');
         return res.status(400).json({ message: 'Invalid profile image URL' });
       }
-    } else {
-      
-      userProfile.profileImageNumber = 1;
     }
 
-    await db.collection('userProfile').doc(userId).set(userProfile);
+    await db.collection('userProfile').doc(uid).set(userProfile);
 
-    console.log('Profile created for user:', userId);
+    console.log('Profile created for user:', uid);
     res.status(201).json({ message: 'Profile created successfully' });
   } catch (error) {
     console.error('Error creating profile:', error);
-    res.status(500).send('Error creating profile');
+    res.status(500).json({ message: 'Error creating profile' });
   }
 };
 
 // 프로필 조회
 exports.getProfile = async (req, res) => {
   try {
-    const { userId } = req.params;
-    const userDoc = await db.collection('userProfile').doc(userId).get();
-
-    if (!userDoc.exists) {
+    const { uid } = req.user;
+    console.log("Fetching profile for uid:", uid);
+    
+    const userProfileDoc = await db.collection('userProfile').doc(uid).get();
+    if (!userProfileDoc.exists) {
+      console.log("Profile not found for uid:", uid);
       return res.status(404).json({ message: 'Profile not found' });
     }
 
-    const userProfile = userDoc.data();
+    const userProfile = userProfileDoc.data();
 
+    // users 컬렉션에서 학과 정보 가져오기
+    const userDoc = await db.collection('users').doc(uid).get();
+    if (userDoc.exists) {
+      const userData = userDoc.data();
+      userProfile.department = userData.department; 
+    } else {
+      console.error("User department not found for uid:", uid); 
+      return res.status(500).json({ message: 'Error retrieving department information' });
+    }
+
+    // 프로필 이미지 설정
     if (userProfile.profileImageNumber) {
       userProfile.profileImageUrl = profileImageMap[userProfile.profileImageNumber];
     }
 
-    console.log('Profile retrieved for user:', userId);
+    console.log('Profile retrieved for user:', uid);
     res.status(200).json(userProfile);
   } catch (error) {
     console.error('Error retrieving profile:', error);
-    res.status(500).send('Error retrieving profile');
+    res.status(500).json({ message: 'Error retrieving profile' });
   }
 };
