@@ -13,16 +13,25 @@ const addComment = async (req, res) => {
     }
 
     // uid를 사용하여 사용자 프로필에서 닉네임을 가져옴
+    const userDoc = await db.collection("users").doc(uid).get();
+    if (!userDoc.exists) {
+      return res.status(404).json({ error: "사용자 정보를 찾을 수 없습니다." });
+    }
+
+    const userData = userDoc.data();
+    const department = userData.department || "미지정"; // 학과 정보 추가
+
     const userProfileDoc = await db.collection("userProfile").doc(uid).get();
     if (!userProfileDoc.exists) {
-      return res.status(404).json({ error: "사용자 프로필을 찾을 수 없습니다." });
+      return res
+        .status(404)
+        .json({ error: "사용자 프로필을 찾을 수 없습니다." });
     }
 
     const nickname = userProfileDoc.data().nickname;
     if (!nickname) {
       return res.status(404).json({ error: "닉네임을 찾을 수 없습니다." });
     }
-
 
     if (!postId || !content) {
       return res.status(400).json({ error: "postId와 content가 필요합니다." });
@@ -31,18 +40,24 @@ const addComment = async (req, res) => {
     const comment = {
       content,
       userNum: uid,
-      nickname: nickname,
+      nickname,
+      department, // 학과 정보 추가
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     };
     const commentsRef = db
       .collection("posts")
       .doc(postId)
       .collection("comments");
-    await commentsRef.add(comment);
 
-    res.status(201).json({ message: "댓글이 추가되었습니다." });
+    const commentDocRef = await commentsRef.add(comment);
+    const commentId = commentDocRef.id; // 댓글 문서의 ID 가져오기
+
+    res.status(201).json({
+      message: "댓글이 추가되었습니다.",
+      commentId, // 댓글 ID 추가
+    });
   } catch (error) {
-    console.error("Error adding comment:", error); // 서버 로그에 에러 출력
+    console.error("Error adding comment:", error);
     res.status(500).json({ error: "댓글 추가 중 오류가 발생했습니다." });
   }
 };
@@ -77,6 +92,7 @@ const getComments = async (req, res) => {
         userNum: data.userNum,
         nickname: data.nickname,
         content: data.content,
+        department: data.department,
         createdAt: koreaTime.toISOString(), // ISO 포맷으로 변환
       };
     });
@@ -84,6 +100,61 @@ const getComments = async (req, res) => {
     res.json(comments);
   } catch (error) {
     console.error("Error fetching comments:", error); // 서버 로그에 에러 출력
+    res.status(500).json({ error: "댓글 조회 중 오류가 발생했습니다." });
+  }
+};
+
+// 특정 댓글 조회
+const getSingleComment = async (req, res) => {
+  try {
+    const { postId, commentId } = req.params;
+
+    if (!postId || !commentId) {
+      return res
+        .status(400)
+        .json({ error: "postId와 commentId가 필요합니다." });
+    }
+
+    // 댓글 정보 가져오기
+    const commentRef = db
+      .collection("posts")
+      .doc(postId)
+      .collection("comments")
+      .doc(commentId);
+    const commentDoc = await commentRef.get();
+
+    if (!commentDoc.exists) {
+      return res.status(404).json({ error: "댓글을 찾을 수 없습니다." });
+    }
+
+    const commentData = commentDoc.data();
+
+    // 댓글 작성자의 프로필 정보 가져오기
+    const userProfileDoc = await db
+      .collection("userProfile")
+      .doc(commentData.userNum)
+      .get();
+    const userProfileData = userProfileDoc.exists
+      ? userProfileDoc.data()
+      : null;
+
+    // 한국 시간 변환
+    const createdAt = commentData.createdAt.toDate();
+    const koreaTime = new Date(createdAt.getTime() + 9 * 60 * 60 * 1000);
+
+    // 댓글 및 작성자 정보 반환
+    res.json({
+      comment: {
+        id: commentDoc.id,
+        content: commentData.content,
+        createdAt: koreaTime.toISOString(),
+        department: commentData.department,
+        userProfile: userProfileData || {},
+      },
+      // 프로필 정보 추가
+    });
+  } catch (error) {
+    console.error("Error fetching comment and author info:", error);
     res.status(500).json({ error: "댓글 조회 중 오류가 발생했습니다." });
   }
 };
@@ -100,7 +171,11 @@ const deleteComment = async (req, res) => {
         .json({ error: "postId와 commentId가 필요합니다." });
     }
 
-    const commentRef = db.collection("posts").doc(postId).collection("comments").doc(commentId);
+    const commentRef = db
+      .collection("posts")
+      .doc(postId)
+      .collection("comments")
+      .doc(commentId);
     const commentDoc = await commentRef.get();
 
     if (!commentDoc.exists) {
@@ -109,7 +184,9 @@ const deleteComment = async (req, res) => {
 
     // 댓글 작성자 확인
     if (commentDoc.data().userNum !== uid) {
-      return res.status(403).json({ message: "권한이 없습니다. 이 댓글을 삭제할 수 없습니다." });
+      return res
+        .status(403)
+        .json({ message: "권한이 없습니다. 이 댓글을 삭제할 수 없습니다." });
     }
 
     await commentRef.delete();
@@ -124,5 +201,6 @@ const deleteComment = async (req, res) => {
 module.exports = {
   addComment,
   getComments,
-  deleteComment
+  deleteComment,
+  getSingleComment,
 };

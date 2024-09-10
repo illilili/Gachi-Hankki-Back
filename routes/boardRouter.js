@@ -19,9 +19,13 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 }, // 파일 크기 제한 (10MB)
 });
 
-
 // 게시글 작성
-router.post("/", upload.single("image"), authenticateToken, postController.createPost);
+router.post(
+  "/",
+  upload.single("image"),
+  authenticateToken,
+  postController.createPost
+);
 
 // 게시글 목록 조회
 router.get("/", postController.getAllPosts);
@@ -36,12 +40,33 @@ router.put("/:id", authenticateToken, postController.updatePost);
 router.delete("/:id", authenticateToken, postController.deletePost);
 
 // 댓글 관련 라우트
-router.post("/:postId/comments", authenticateToken, commentsController.addComment); // 댓글 작성
+router.post(
+  "/:postId/comments",
+  authenticateToken,
+  commentsController.addComment
+); // 댓글 작성
 router.get("/:postId/comments", commentsController.getComments); // 댓글 조회
-router.delete("/:postId/comments/:commentId", authenticateToken, commentsController.deleteComment); // 댓글 삭제
+router.get("/:postId/comments/:commentId", commentsController.getSingleComment); // 댓글 하나 조회
+router.delete(
+  "/:postId/comments/:commentId",
+  authenticateToken,
+  commentsController.deleteComment
+); // 댓글 삭제
 
 // 대댓글 관련 라우트
-router.post("/:postId/comments/:commentId/replies", authenticateToken, replyController.addReply); // 대댓글 작성
+router.post(
+  "/:postId/comments/:commentId/replies",
+  authenticateToken,
+  replyController.addReply
+); // 대댓글 작성
 router.get("/:postId/comments/:commentId/replies", replyController.getReplies); // 대댓글 조회
-router.delete("/:postId/comments/:commentId/replies/:replyId", authenticateToken, replyController.deleteReply); // 대댓글 삭제
+router.get(
+  "/:postId/comments/:commentId/replies/:replyId",
+  replyController.getSingleReply
+);
+router.delete(
+  "/:postId/comments/:commentId/replies/:replyId",
+  authenticateToken,
+  replyController.deleteReply
+); // 대댓글 삭제
 module.exports = router;
