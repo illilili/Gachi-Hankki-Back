@@ -66,40 +66,55 @@ const addComment = async (req, res) => {
 const getComments = async (req, res) => {
   try {
     const postId = req.params.postId; // URL 파라미터에서 postId 추출
-    console.log("Fetching comments for postId:", postId); // 디버깅 로그 추가
+    console.log("Fetching comments for postId:", postId);
+
     if (!postId) {
       return res.status(400).json({ error: "postId가 필요합니다." });
     }
+
     const commentsRef = db
       .collection("posts")
       .doc(postId)
       .collection("comments");
+
     const snapshot = await commentsRef.orderBy("createdAt", "desc").get();
 
     if (snapshot.empty) {
       return res.status(404).json({ message: "댓글이 없습니다." });
     }
 
-    const comments = snapshot.docs.map((doc) => {
-      const data = doc.data();
-      const createdAt = data.createdAt.toDate(); // Firestore Timestamp를 JavaScript Date로 변환
+    // 비동기 처리된 프로필 정보를 병렬로 처리
+    const comments = await Promise.all(
+      snapshot.docs.map(async (doc) => {
+        const data = doc.data();
+        const createdAt = data.createdAt.toDate(); // Firestore Timestamp를 JavaScript Date로 변환
 
-      // 한국 시간으로 변환
-      const koreaTime = new Date(createdAt.getTime() + 9 * 60 * 60 * 1000); // UTC+9 시간 추가
+        // 한국 시간으로 변환
+        const koreaTime = new Date(createdAt.getTime() + 9 * 60 * 60 * 1000); // UTC+9 시간 추가
 
-      return {
-        id: doc.id,
-        userNum: data.userNum,
-        nickname: data.nickname,
-        content: data.content,
-        department: data.department,
-        createdAt: koreaTime.toISOString(), // ISO 포맷으로 변환
-      };
-    });
+        // 댓글 작성자의 프로필 정보 가져오기
+        const userProfileDoc = await db
+          .collection("userProfile")
+          .doc(data.userNum)
+          .get();
+
+        const userProfile = userProfileDoc.exists ? userProfileDoc.data() : null;
+
+        return {
+          id: doc.id,
+          userNum: data.userNum,
+          nickname: data.nickname,
+          content: data.content,
+          department: data.department,
+          createdAt: koreaTime.toISOString(), // ISO 포맷으로 변환
+          userProfile: userProfile || {}, // 프로필 정보 추가
+        };
+      })
+    );
 
     res.json(comments);
   } catch (error) {
-    console.error("Error fetching comments:", error); // 서버 로그에 에러 출력
+    console.error("Error fetching comments:", error);
     res.status(500).json({ error: "댓글 조회 중 오류가 발생했습니다." });
   }
 };

@@ -62,6 +62,7 @@ const addReply = async (req, res) => {
 };
 
 // 댓글의 대댓글 조회
+// 댓글의 대댓글 조회
 const getReplies = async (req, res) => {
   try {
     const { postId, commentId } = req.params; // URL 파라미터에서 postId와 commentId 추출
@@ -85,22 +86,33 @@ const getReplies = async (req, res) => {
       return res.status(404).json({ message: "대댓글이 없습니다." });
     }
 
-    const replies = snapshot.docs.map((doc) => {
-      const data = doc.data();
-      const createdAt = data.createdAt.toDate(); // Firestore Timestamp를 JavaScript Date로 변환
+    const replies = await Promise.all(
+      snapshot.docs.map(async (doc) => {
+        const data = doc.data();
+        const createdAt = data.createdAt.toDate(); // Firestore Timestamp를 JavaScript Date로 변환
 
-      // 한국 시간으로 변환
-      const koreaTime = new Date(createdAt.getTime() + 9 * 60 * 60 * 1000); // UTC+9 시간 추가
+        // 한국 시간으로 변환
+        const koreaTime = new Date(createdAt.getTime() + 9 * 60 * 60 * 1000);
 
-      return {
-        id: doc.id,
-        userNum: data.userNum,
-        nickname: data.nickname,
-        content: data.content,
-        department: data.department,
-        createdAt: koreaTime.toISOString(), // ISO 포맷으로 변환
-      };
-    });
+        // 대댓글 작성자의 프로필 정보 가져오기
+        const userProfileDoc = await db
+          .collection("userProfile")
+          .doc(data.userNum)
+          .get();
+
+        const userProfile = userProfileDoc.exists ? userProfileDoc.data() : null;
+
+        return {
+          id: doc.id,
+          userNum: data.userNum,
+          nickname: data.nickname,
+          content: data.content,
+          department: data.department,
+          createdAt: koreaTime.toISOString(),
+          userProfile: userProfile || {}, // 프로필 정보 추가
+        };
+      })
+    );
 
     res.json(replies);
   } catch (error) {
