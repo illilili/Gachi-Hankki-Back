@@ -10,7 +10,7 @@ const profileImageMap = {
   1: 'https://firebasestorage.googleapis.com/v0/b/hanbat-capstone-d4979.appspot.com/o/1.png?alt=media&token=f9346465-c861-40d0-a817-5cbc909204f5',
   2: 'https://firebasestorage.googleapis.com/v0/b/hanbat-capstone-d4979.appspot.com/o/2.png?alt=media&token=26257b4d-2023-4940-a3b5-a429fcabdbb3',
   3: 'https://firebasestorage.googleapis.com/v0/b/hanbat-capstone-d4979.appspot.com/o/3.png?alt=media&token=62c67f33-457d-42da-8ef5-fddf965083d6',
-  4: 'https://firebasestorage.googleapis.com/v0/b/hanbat-capstone-d4979.appspot.com/o/4.png?alt=media&token=ca629e4d-e80c-4bd9-841c-4330de8a36bc',
+  4: 'https://firebasestorage.googleapis.com/v0/b/hanbat-capstone-d4979.appspot.com/o/4.png?alt=media&token=ca629e4d-e80c-4bd9-8411-a79ab72bb923',
   5: 'https://firebasestorage.googleapis.com/v0/b/hanbat-capstone-d4979.appspot.com/o/5.png?alt=media&token=f72824b2-213d-43ef-adc6-cd3a825eb5cb',
   6: 'https://firebasestorage.googleapis.com/v0/b/hanbat-capstone-d4979.appspot.com/o/6.png?alt=media&token=1b221932-efae-4195-8f98-f8b8dc38035c',
   7: 'https://firebasestorage.googleapis.com/v0/b/hanbat-capstone-d4979.appspot.com/o/7.png?alt=media&token=51224f74-7084-4d7b-828a-e1f26d3ac69a',
@@ -70,7 +70,8 @@ exports.getProfile = async (req, res) => {
   try {
     const { uid } = req.user;
     console.log("Fetching profile for uid:", uid);
-    
+
+    // userProfile 문서에서 프로필 정보 가져오기
     const userProfileDoc = await db.collection('userProfile').doc(uid).get();
     if (!userProfileDoc.exists) {
       console.log("Profile not found for uid:", uid);
@@ -85,8 +86,8 @@ exports.getProfile = async (req, res) => {
       const userData = userDoc.data();
       userProfile.department = userData.department; 
     } else {
-      console.error("User department not found for uid:", uid); 
-      return res.status(500).json({ message: 'Error retrieving department information' });
+      console.error("User department not found for uid:", uid);
+      return res.status(500).json({ message: 'Error retrievig department information' });
     }
 
     // 프로필 이미지 설정
@@ -99,5 +100,77 @@ exports.getProfile = async (req, res) => {
   } catch (error) {
     console.error('Error retrieving profile:', error);
     res.status(500).json({ message: 'Error retrieving profile' });
+  }
+};
+
+// 프로필 이미지 변경
+exports.updateProfileImage = async (req, res) => {
+  try {
+    const { uid } = req.user;
+    const { profileImageUrl, profileImageNumber } = req.body;
+
+    // 유효한 프로필 이미지 입력이 없을 경우
+    if (!profileImageNumber && !profileImageUrl) {
+      return res.status(400).json({ message: 'Profile image or image number is required' });
+    }
+
+    // 기존 프로필 정보 가져오기
+    const userProfileDoc = await db.collection('userProfile').doc(uid).get();
+    if (!userProfileDoc.exists) {
+      return res.status(404).json({ message: 'Profile not found' });
+    }
+
+    const updatedProfile = {};
+
+    // 프로필 이미지 업데이트
+    if (profileImageNumber) {
+      updatedProfile.profileImageNumber = profileImageNumber;
+      updatedProfile.profileImageUrl = profileImageMap[profileImageNumber];
+    } else if (profileImageUrl) {
+      const foundProfileImageNumber = Object.keys(profileImageMap).find(key => profileImageMap[key] === profileImageUrl);
+      if (foundProfileImageNumber) {
+        updatedProfile.profileImageNumber = foundProfileImageNumber;
+        updatedProfile.profileImageUrl = profileImageUrl;
+      } else {
+        return res.status(400).json({ message: 'Invalid profile image URL' });
+      }
+    }
+
+    // Firestore에 프로필 이미지 업데이트
+    await db.collection('userProfile').doc(uid).update(updatedProfile);
+
+    console.log('Profile image updated for user:', uid);
+    res.status(200).json({ message: 'Profile image updated successfully' });
+  } catch (error) {
+    console.error('Error updating profile image:', error);
+    res.status(500).json({ message: 'Error updating profile image' });
+  }
+};
+
+// 한줄 소개 변경 
+exports.updateBio = async (req, res) => {
+  try {
+    const { uid } = req.user;
+    const { bio } = req.body;
+
+    // 유효한 bio 입력이 없을 경우
+    if (!bio) {
+      return res.status(400).json({ message: 'Bio is required' });
+    }
+
+    // 기존 프로필 정보 가져오기
+    const userProfileDoc = await db.collection('userProfile').doc(uid).get();
+    if (!userProfileDoc.exists) {
+      return res.status(404).json({ message: 'Profile not found' });
+    }
+
+    // Firestore에 한줄 소개 업데이트
+    await db.collection('userProfile').doc(uid).update({ bio });
+
+    console.log('Bio updated for user:', uid);
+    res.status(200).json({ message: 'Bio updated successfully' });
+  } catch (error) {
+    console.error('Error updating bio:', error);
+    res.status(500).json({ message: 'Error updating bio' });
   }
 };
