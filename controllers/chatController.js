@@ -1,17 +1,16 @@
 const admin = require("firebase-admin");
-const db = admin.database();
+const realtimeDB = admin.database(); 
+const firestoreDB = admin.firestore(); 
+
 
 const getKoreanTime = () => {
   const date = new Date();
-  
-  
   const offsetInMillis = 9 * 60 * 60 * 1000;
   const koreanTime = new Date(date.getTime() + offsetInMillis);
-  
   return koreanTime.toISOString().replace('T', ' ').split('.')[0];
 };
 
-
+// Firebase 인증 미들웨어 
 const authenticateToken = async (req, res, next) => {
   const token = req.headers.authorization?.split(' ')[1];
 
@@ -20,7 +19,6 @@ const authenticateToken = async (req, res, next) => {
   }
 
   try {
-    
     const decodedToken = await admin.auth().verifyIdToken(token);
     req.user = decodedToken;
     next(); 
@@ -31,21 +29,29 @@ const authenticateToken = async (req, res, next) => {
 
 // 1:1 쪽지방 생성
 exports.createRoom = async (req, res) => {
-  const { receiverNickname } = req.body;
-  const senderNickname = req.user.nickname;
+  const { receiverNickname } = req.body; 
+  const senderNickname = req.user.nickname; 
 
   if (!senderNickname || !receiverNickname) {
     return res.status(400).json({ success: false, message: '발신자와 수신자 닉네임이 필요합니다.' });
   }
 
   try {
-    const roomRef = db.ref('ChatRooms').push();
+    const userSnapshot = await firestoreDB.collection('userProfile')
+      .where('nickname', '==', receiverNickname)
+      .get();
+
+    if (userSnapshot.empty) {
+      return res.status(404).json({ success: false, message: '수신자 닉네임이 유효하지 않습니다. 회원가입된 사용자가 아닙니다.' });
+    }
+
+    const roomRef = realtimeDB.ref('ChatRooms').push();
     const roomId = roomRef.key;
     const now = getKoreanTime();
 
     await roomRef.set({
       roomId: roomId,
-      members: [senderNickname, receiverNickname],
+      members: [senderNickname, receiverNickname], 
       lastUpdated: now,
     });
 
@@ -56,17 +62,16 @@ exports.createRoom = async (req, res) => {
   }
 };
 
-// 특정 방의 메시지 가져오기
+// 특정 방 메시지 전체 가져오기
 exports.getMessages = async (req, res) => {
   const roomId = req.params.roomId;
 
-  // roomId가 없는 경우 400 Bad Request 반환
   if (!roomId) {
     return res.status(400).json({ success: false, message: '유효하지 않은 요청입니다. roomId가 필요합니다.' });
   }
 
   try {
-    const messagesRef = db.ref(`ChatRooms/${roomId}/messages`);
+    const messagesRef = realtimeDB.ref(`ChatRooms/${roomId}/messages`);
     const snapshot = await messagesRef.once("value");
 
     if (snapshot.exists()) {
@@ -81,7 +86,6 @@ exports.getMessages = async (req, res) => {
 
       res.status(200).json({ success: true, messages: messages });
     } else {
-      // 메시지가 없는 경우 빈 배열 반환
       res.status(200).json({ success: true, messages: [] });
     }
   } catch (error) {
@@ -93,27 +97,25 @@ exports.getMessages = async (req, res) => {
 // 메시지 추가하기
 exports.addMessage = async (req, res) => {
   const roomId = req.params.roomId;
-  const senderNickname = req.user.nickname;
-  const { text } = req.body;
+  const { senderNickname, text } = req.body; 
 
-  // roomId가 없는 경우 400 Bad Request 반환
-  if (!roomId) {
-    return res.status(400).json({ success: false, message: '유효하지 않은 요청입니다. roomId가 필요합니다.' });
+  if (!roomId || !senderNickname || !text) {
+    return res.status(400).json({ success: false, message: '유효하지 않은 요청입니다. roomId, senderNickname, text가 필요합니다.' });
   }
 
   const now = getKoreanTime();
 
   try {
-    const messagesRef = db.ref(`ChatRooms/${roomId}/messages`);
+    const messagesRef = realtimeDB.ref(`ChatRooms/${roomId}/messages`);
     const newMessageRef = messagesRef.push();
 
     await newMessageRef.set({
-      sender: senderNickname,
+      sender: senderNickname, 
       text: text,
       timestamp: now,
     });
 
-    const roomRef = db.ref(`ChatRooms/${roomId}`);
+    const roomRef = realtimeDB.ref(`ChatRooms/${roomId}`);
     await roomRef.update({
       lastUpdated: now,
     });
@@ -129,18 +131,14 @@ exports.addMessage = async (req, res) => {
 exports.deleteRoom = async (req, res) => {
   const roomId = req.params.roomId;
 
-  // roomId가 없는 경우 400 Bad Request 반환
   if (!roomId) {
     return res.status(400).json({ success: false, message: '유효하지 않은 요청입니다. roomId가 필요합니다.' });
   }
 
   try {
-    const roomRef = db.ref(`ChatRooms/${roomId}`);
+    const roomRef = realtimeDB.ref(`ChatRooms/${roomId}`);
 
-    // 방의 모든 메시지를 삭제
     await roomRef.child('messages').remove();
-
-    // 방 자체를 삭제
     await roomRef.remove();
 
     res.status(200).json({ success: true, message: '쪽지방이 삭제되었습니다.' });
@@ -153,22 +151,25 @@ exports.deleteRoom = async (req, res) => {
 // 쪽지방 목록 가져오기
 exports.getRooms = async (req, res) => {
   try {
-    const roomsRef = db.ref('ChatRooms');
+    const roomsRef = realtimeDB.ref('ChatRooms');
     const snapshot = await roomsRef.once("value");
 
     if (snapshot.exists()) {
       const rooms = snapshot.val();
 
-      for (let key in rooms) {
-        if (rooms[key].lastUpdated) {
-          const lastUpdated = rooms[key].lastUpdated;
-          rooms[key].lastUpdated = new Date(lastUpdated).toISOString().replace('T', ' ').split('.')[0];
-        }
+      const roomList = {};
+      for (let roomId in rooms) {
+        roomList[roomId] = {
+          roomId: roomId,
+          members: rooms[roomId].members,
+          lastUpdated: rooms[roomId].lastUpdated ? new Date(rooms[roomId].lastUpdated).toISOString().replace('T', ' ').split('.')[0] : "",
+          lastMessage: rooms[roomId].lastMessage || ""
+        };
       }
 
-      res.status(200).json({ success: true, rooms: rooms });
+      res.status(200).json({ success: true, rooms: roomList });
     } else {
-      res.status(200).json({ success: true, rooms: [] }); 
+      res.status(200).json({ success: true, rooms: [] });
     }
   } catch (error) {
     console.error("쪽지방 목록 가져오기 오류:", error);
