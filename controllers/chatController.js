@@ -2,7 +2,6 @@ const admin = require("firebase-admin");
 const realtimeDB = admin.database(); 
 const firestoreDB = admin.firestore(); 
 
-
 const getKoreanTime = () => {
   const date = new Date();
   const offsetInMillis = 9 * 60 * 60 * 1000;
