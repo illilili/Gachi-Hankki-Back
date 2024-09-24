@@ -2,6 +2,7 @@ const admin = require("firebase-admin");
 const realtimeDB = admin.database(); 
 const firestoreDB = admin.firestore(); 
 
+
 const getKoreanTime = () => {
   const date = new Date();
   const offsetInMillis = 9 * 60 * 60 * 1000;
@@ -61,42 +62,10 @@ exports.createRoom = async (req, res) => {
   }
 };
 
-// 특정 방 메시지 전체 가져오기
-exports.getMessages = async (req, res) => {
-  const roomId = req.params.roomId;
-
-  if (!roomId) {
-    return res.status(400).json({ success: false, message: '유효하지 않은 요청입니다. roomId가 필요합니다.' });
-  }
-
-  try {
-    const messagesRef = realtimeDB.ref(`ChatRooms/${roomId}/messages`);
-    const snapshot = await messagesRef.once("value");
-
-    if (snapshot.exists()) {
-      const messages = snapshot.val();
-
-      for (let key in messages) {
-        if (messages[key].timestamp) {
-          const timestamp = messages[key].timestamp;
-          messages[key].timestamp = new Date(timestamp).toISOString().replace('T', ' ').split('.')[0];
-        }
-      }
-
-      res.status(200).json({ success: true, messages: messages });
-    } else {
-      res.status(200).json({ success: true, messages: [] });
-    }
-  } catch (error) {
-    console.error("메시지 가져오기 오류:", error);
-    res.status(500).json({ success: false, message: "서버 오류가 발생했습니다." });
-  }
-};
-
 // 메시지 추가하기
 exports.addMessage = async (req, res) => {
   const roomId = req.params.roomId;
-  const { senderNickname, text } = req.body; 
+  const { senderNickname, text } = req.body; // 발신자 닉네임과 메시지 내용을 Body에서 전달받음
 
   if (!roomId || !senderNickname || !text) {
     return res.status(400).json({ success: false, message: '유효하지 않은 요청입니다. roomId, senderNickname, text가 필요합니다.' });
@@ -105,23 +74,112 @@ exports.addMessage = async (req, res) => {
   const now = getKoreanTime();
 
   try {
+    // 새 메시지를 추가
     const messagesRef = realtimeDB.ref(`ChatRooms/${roomId}/messages`);
     const newMessageRef = messagesRef.push();
 
     await newMessageRef.set({
-      sender: senderNickname, 
+      sender: senderNickname,
       text: text,
       timestamp: now,
     });
 
+    // 방의 lastUpdated와 lastMessage를 업데이트
     const roomRef = realtimeDB.ref(`ChatRooms/${roomId}`);
     await roomRef.update({
-      lastUpdated: now,
+      lastUpdated: now,  // 마지막 업데이트 시간
+      lastMessage: text  // 마지막 메시지 업데이트
     });
 
     res.status(201).json({ success: true, message: "메시지가 추가되었습니다." });
   } catch (error) {
     console.error("메시지 추가 오류:", error);
+    res.status(500).json({ success: false, message: "서버 오류가 발생했습니다." });
+  }
+};
+
+// 쪽지방 목록 가져오기
+exports.getRooms = async (req, res) => {
+  const senderNickname = req.user.nickname; 
+
+  try {
+    const roomsRef = realtimeDB.ref('ChatRooms');
+    const snapshot = await roomsRef.once("value");
+
+    if (snapshot.exists()) {
+      const rooms = snapshot.val();
+
+      const roomList = {};
+      for (let roomId in rooms) {
+        const room = rooms[roomId];
+
+        if (room && Array.isArray(room.members) && room.members.includes(senderNickname)) {
+          roomList[roomId] = {
+            roomId: roomId,
+            members: room.members,
+            lastUpdated: room.lastUpdated ? new Date(room.lastUpdated).toISOString().replace('T', ' ').split('.')[0] : "",
+            lastMessage: room.lastMessage || ""
+          };
+        } else {
+          console.log(`방 ${roomId}에 members 필드가 존재하지 않거나 배열이 아닙니다.`);
+        }
+      }
+
+      res.status(200).json({ success: true, rooms: roomList });
+    } else {
+      res.status(200).json({ success: true, rooms: [] });
+    }
+  } catch (error) {
+    console.error("쪽지방 목록 가져오기 오류:", error);
+    res.status(500).json({ success: false, message: "서버 오류가 발생했습니다." });
+  }
+};
+
+// 특정 방 메시지 전체 가져오기 
+exports.getMessages = async (req, res) => {
+  const roomId = req.params.roomId;
+
+  if (!roomId) {
+    return res.status(400).json({ success: false, message: '유효하지 않은 요청입니다. roomId가 필요합니다.' });
+  }
+
+  try {
+    const roomRef = realtimeDB.ref(`ChatRooms/${roomId}`);
+    const roomSnapshot = await roomRef.once("value");
+
+    if (!roomSnapshot.exists()) {
+      return res.status(404).json({ success: false, message: '해당 방을 찾을 수 없습니다.' });
+    }
+
+    const roomData = roomSnapshot.val();
+    const { members } = roomData;
+
+    const senderNickname = members[0]; 
+    const receiverNickname = members[1]; 
+
+    const messagesRef = roomRef.child('messages');
+    const messagesSnapshot = await messagesRef.once("value");
+
+    let messages = {};
+    if (messagesSnapshot.exists()) {
+      messages = messagesSnapshot.val();
+
+      for (let key in messages) {
+        if (messages[key].timestamp) {
+          const timestamp = messages[key].timestamp;
+          messages[key].timestamp = new Date(timestamp).toISOString().replace('T', ' ').split('.')[0];
+        }
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      messages: messages,
+      senderNickname: senderNickname, 
+      receiverNickname: receiverNickname 
+    });
+  } catch (error) {
+    console.error("메시지 가져오기 오류:", error);
     res.status(500).json({ success: false, message: "서버 오류가 발생했습니다." });
   }
 };
@@ -144,34 +202,5 @@ exports.deleteRoom = async (req, res) => {
   } catch (error) {
     console.error("쪽지방 삭제 오류:", error);
     res.status(500).json({ success: false, message: '쪽지방 삭제 중 오류가 발생했습니다.', details: error.message });
-  }
-};
-
-// 쪽지방 목록 가져오기
-exports.getRooms = async (req, res) => {
-  try {
-    const roomsRef = realtimeDB.ref('ChatRooms');
-    const snapshot = await roomsRef.once("value");
-
-    if (snapshot.exists()) {
-      const rooms = snapshot.val();
-
-      const roomList = {};
-      for (let roomId in rooms) {
-        roomList[roomId] = {
-          roomId: roomId,
-          members: rooms[roomId].members,
-          lastUpdated: rooms[roomId].lastUpdated ? new Date(rooms[roomId].lastUpdated).toISOString().replace('T', ' ').split('.')[0] : "",
-          lastMessage: rooms[roomId].lastMessage || ""
-        };
-      }
-
-      res.status(200).json({ success: true, rooms: roomList });
-    } else {
-      res.status(200).json({ success: true, rooms: [] });
-    }
-  } catch (error) {
-    console.error("쪽지방 목록 가져오기 오류:", error);
-    res.status(500).json({ success: false, message: "서버 오류가 발생했습니다." });
   }
 };
