@@ -66,7 +66,7 @@ exports.reportPost = async (req, res) => {
 // 댓글 신고
 exports.reportComment = async (req, res) => {
   try {
-    const { commentId } = req.params; // URL에서 댓글 ID 가져오기
+    const { postId, commentId } = req.params; // URL에서 댓글 ID 가져오기
     const { reason } = req.body; // 신고 사유만 받음
     const reporterId = req.user ? req.user.uid : null; // 신고자 ID
 
@@ -82,8 +82,15 @@ exports.reportComment = async (req, res) => {
         .json({ error: "commentId와 reason이 필요합니다." });
     }
 
+    console.log("Post ID:", postId, "Comment ID:", commentId);
+
     // Firestore에서 댓글 정보 조회
-    const commentDoc = await db.collection("comments").doc(commentId).get();
+    const commentDoc = await db
+      .collection("posts")
+      .doc(postId)
+      .collection("comments")
+      .doc(commentId)
+      .get();
 
     // 댓글이 존재하지 않으면 에러 반환
     if (!commentDoc.exists) {
@@ -92,7 +99,7 @@ exports.reportComment = async (req, res) => {
 
     const commentData = commentDoc.data();
     console.log("Comment Data:", commentData); // 추가: 댓글 데이터 확인
-    const commentOwnerId = commentData.UserNum; // 댓글 작성자의 uid
+    const commentOwnerId = commentData.userNum; // 댓글 작성자의 uid
 
     // 댓글 작성자 정보가 없는 경우 에러 반환
     if (!commentOwnerId) {
@@ -114,11 +121,12 @@ exports.reportComment = async (req, res) => {
 
     // 신고 정보를 Firestore에 저장
     await db.collection("reports").doc("comments").collection(commentId).add({
+      postId: postId,
       commentId: commentId,
       reporterId: reporterId, // 신고자 uid
       commentOwnerId: commentOwnerId, // 댓글 작성자 uid
       reason: reason,
-      commentContent: commentData.CommentContent, // 댓글 내용
+      content: commentData.content, // 댓글 내용
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
