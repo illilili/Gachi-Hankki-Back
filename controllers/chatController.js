@@ -27,7 +27,7 @@ const authenticateToken = async (req, res, next) => {
   }
 };
 
-// 1:1 쪽지방 생성
+// 1:1 쪽지방 생성 (발신자와 수신자가 같은 방이 있는지 확인)
 exports.createRoom = async (req, res) => {
   const { receiverNickname } = req.body; 
   const senderNickname = req.user.nickname; 
@@ -37,6 +37,7 @@ exports.createRoom = async (req, res) => {
   }
 
   try {
+   
     const userSnapshot = await firestoreDB.collection('userProfile')
       .where('nickname', '==', receiverNickname)
       .get();
@@ -45,13 +46,34 @@ exports.createRoom = async (req, res) => {
       return res.status(404).json({ success: false, message: '수신자 닉네임이 유효하지 않습니다. 회원가입된 사용자가 아닙니다.' });
     }
 
-    const roomRef = realtimeDB.ref('ChatRooms').push();
+    const memberKey = [senderNickname, receiverNickname].sort().join("_");
+
+    const roomsRef = realtimeDB.ref('ChatRooms');
+    const existingRoomSnapshot = await roomsRef
+      .orderByChild('memberKey')
+      .equalTo(memberKey)
+      .once("value");
+
+    if (existingRoomSnapshot.exists()) {
+      const existingRoomData = existingRoomSnapshot.val();
+      const existingRoomId = Object.keys(existingRoomData)[0]; 
+
+      return res.status(409).json({
+        success: false,
+        message: '이미 존재하는 쪽지방입니다.',
+        roomId: existingRoomId
+      });
+    }
+
+    // 새로운 방 생성
+    const roomRef = roomsRef.push();
     const roomId = roomRef.key;
     const now = getKoreanTime();
-
+    
     await roomRef.set({
       roomId: roomId,
       members: [senderNickname, receiverNickname], 
+      memberKey: memberKey, 
       lastUpdated: now,
     });
 
@@ -204,3 +226,4 @@ exports.deleteRoom = async (req, res) => {
     res.status(500).json({ success: false, message: '쪽지방 삭제 중 오류가 발생했습니다.', details: error.message });
   }
 };
+
