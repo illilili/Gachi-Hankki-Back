@@ -47,9 +47,9 @@ app.use("/", loginRouter);
 const profileRouter = require("./routes/profileRouter.js");
 app.use("/profile", profileRouter);
 
-// 쪽지 
+// 쪽지
 const chatRouter = require("./routes/chatRouter.js");
-app.use("/chat", chatRouter);
+app.use("/", chatRouter);
 
 // 테스트 엔드포인트
 app.get('/test', authenticateToken, (req, res) => {
