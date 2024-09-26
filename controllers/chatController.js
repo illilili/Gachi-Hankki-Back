@@ -59,7 +59,7 @@ exports.createRoom = async (req, res) => {
       const existingRoomId = Object.keys(existingRoomData)[0]; 
 
       return res.status(200).json({
-        success: false,
+        success: true,
         message: '이미 존재하는 쪽지방입니다.',
         roomId: existingRoomId
       });
