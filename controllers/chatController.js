@@ -27,7 +27,7 @@ const authenticateToken = async (req, res, next) => {
   }
 };
 
-// 1:1 쪽지방 생성 (발신자와 수신자가 같은 방이 있는지 확인)
+// 1:1 쪽지방 생성
 exports.createRoom = async (req, res) => {
   const { receiverNickname } = req.body; 
   const senderNickname = req.user.nickname; 
