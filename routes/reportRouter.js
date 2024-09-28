@@ -24,11 +24,13 @@ router.post(
 // 신고 리스트 조회
 router.get("/reports", reportManageController.getReports);
 
-// 블라인드 해제
-router.put("/unblind/:commentId", reportManageController.unblindContent);
+// 블라인드 리스트 조회
+router.get("/blinded", reportManageController.getBlindedContent);
 
-// 주기적으로 자동 블라인드 처리
-setInterval(reportManageController.autoBlindReports, 24 * 60 * 60 * 1000); // 하루마다 실행되도록 해둠,, 나중에 수정
+
+// 블라인드 해제
+router.put("/blinded/:id", reportManageController.unblindContent);
+
 
 
 module.exports = router;

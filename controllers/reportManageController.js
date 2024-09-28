@@ -56,60 +56,39 @@ const getReports = async (req, res) => {
 	}
 };
 
-// 3회 이상 신고된 내용 블라인드 처리
-const autoBlindReports = async () => {
+// 블라인드 처리된 콘텐츠 조회
+const getBlindedContent = async (req, res) => {
 	try {
-		const blindRef = db.collection("blindedContent"); // 블라인드 처리된 내용을 저장할 컬렉션
-		const reportTypes = ['users', 'comments', 'replies', 'posts'];
+		const blindRef = db.collection("blindedContent");
+		const blindSnapshot = await blindRef.get();
 
-		for (const type of reportTypes) {
-			const reportsSnapshot = await db.collection("reports").doc(type).get(); // 해당 type의 문서 가져오기
-			const reportsData = reportsSnapshot.data();
+		const blindedContent = [];
+		blindSnapshot.forEach(doc => {
+			blindedContent.push({ id: doc.id, ...doc.data() });
+		});
 
-			const reportCounts = {};
-			for (const reportId in reportsData) { // 각 신고 문서의 ID로 순회
-				const reportData = reportsData[reportId];
-				const idField = type === 'posts' ? 'postId' : type === 'comments' ? 'commentId' : 'replyId';
-				reportCounts[reportData[idField]] = (reportCounts[reportData[idField]] || 0) + 1;
-			}
-
-			for (const id in reportCounts) {
-				if (reportCounts[id] >= 3) {
-					// 블라인드 처리
-					await blindRef.add({
-						[type]: id,
-						createdAt: admin.firestore.FieldValue.serverTimestamp(),
-					});
-				}
-			}
-
-			// 신고 내역 삭제
-			await Promise.all(Object.keys(reportsData).map(async reportId => {
-				await db.collection("reports").doc(type).update({
-					[reportId]: admin.firestore.FieldValue.delete()
-				});
-			}));
-		}
+		res.json(blindedContent);
 	} catch (error) {
-		console.error("Error blinding reports:", error);
+		console.error("Error fetching blinded content:", error);
+		res.status(500).json({ error: "블라인드 처리된 콘텐츠 조회 중 오류가 발생했습니다." });
 	}
 };
 
-// 블라인드 해제
+// 블라인드 해제 
 const unblindContent = async (req, res) => {
 	try {
-		const { id } = req.params; // 블라인드 해제할 ID (게시글, 댓글 또는 대댓글의 ID)
+		const { id } = req.params; // 블라인드 해제할 ID
 
 		// 블라인드 처리된 내용을 가져오기
-		const blindRef = db.collection("blindedContent").where("id", "==", id);
+		const blindRef = db.collection("blindedContent").doc(id);
 		const blindDoc = await blindRef.get();
 
-		if (blindDoc.empty) {
+		if (!blindDoc.exists) {
 			return res.status(404).json({ error: "블라인드 처리된 내용이 없습니다." });
 		}
 
 		// 블라인드 해제 및 삭제
-		await Promise.all(blindDoc.docs.map(doc => doc.ref.delete()));
+		await blindRef.delete();
 
 		res.status(200).json({ message: "블라인드가 해제되었습니다." });
 	} catch (error) {
@@ -118,10 +97,8 @@ const unblindContent = async (req, res) => {
 	}
 };
 
-
-
 module.exports = {
 	getReports,
-	autoBlindReports,
 	unblindContent,
+	getBlindedContent, // 추가
 };
