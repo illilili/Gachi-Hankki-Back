@@ -136,3 +136,78 @@ exports.reportComment = async (req, res) => {
     res.status(500).json({ error: "댓글 신고 중 오류가 발생했습니다." });
   }
 };
+
+
+// 대댓글 신고
+exports.reportReply = async (req, res) => {
+  try {
+    const { postId, commentId, replyId } = req.params; // URL에서 대댓글 ID 가져오기
+    const { reason } = req.body; // 신고 사유만 받음
+    const reporterId = req.user ? req.user.uid : null; // 신고자 ID
+
+    // 신고자 정보가 없으면 에러 반환
+    if (!reporterId) {
+      return res.status(400).json({ error: "신고자 정보가 필요합니다." });
+    }
+
+    // replyId와 reason이 없는 경우 에러 반환
+    if (!replyId || !reason) {
+      return res.status(400).json({ error: "replyId와 reason이 필요합니다." });
+    }
+
+    console.log("Post ID:", postId, "Comment ID:", commentId, "Reply ID:", replyId);
+
+    // Firestore에서 대댓글 정보 조회
+    const replyDoc = await db
+      .collection("posts")
+      .doc(postId)
+      .collection("comments")
+      .doc(commentId)
+      .collection("replies")
+      .doc(replyId)
+      .get();
+
+    // 대댓글이 존재하지 않으면 에러 반환
+    if (!replyDoc.exists) {
+      return res.status(404).json({ error: "해당 대댓글을 찾을 수 없습니다." });
+    }
+
+    const replyData = replyDoc.data();
+    const replyOwnerId = replyData.userNum; // 대댓글 작성자의 uid
+
+    // 대댓글 작성자 정보가 없는 경우 에러 반환
+    if (!replyOwnerId) {
+      console.error("대댓글 작성자 정보가 없습니다:", replyData);
+      return res.status(400).json({ error: "대댓글 작성자 정보가 필요합니다." });
+    }
+
+    // 중복 신고 확인
+    const existingReport = await db
+      .collection("reports")
+      .doc("replies")
+      .collection(replyId)
+      .where("reporterId", "==", reporterId)
+      .get();
+
+    if (!existingReport.empty) {
+      return res.status(400).json({ error: "이미 신고한 대댓글입니다." });
+    }
+
+    // 신고 정보를 Firestore에 저장
+    await db.collection("reports").doc("replies").collection(replyId).add({
+      postId: postId,
+      commentId: commentId,
+      replyId: replyId,
+      reporterId: reporterId, // 신고자 uid
+      replyOwnerId: replyOwnerId, // 대댓글 작성자 uid
+      reason: reason,
+      content: replyData.content, // 대댓글 내용
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    res.status(200).json({ message: "대댓글이 성공적으로 신고되었습니다." });
+  } catch (error) {
+    console.error("Error reporting reply:", error);
+    res.status(500).json({ error: "대댓글 신고 중 오류가 발생했습니다." });
+  }
+};
