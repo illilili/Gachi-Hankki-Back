@@ -43,6 +43,7 @@ const addComment = async (req, res) => {
       nickname,
       department, // 학과 정보 추가
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      isBlind: false,
     };
     const commentsRef = db
       .collection("posts")
@@ -77,7 +78,11 @@ const getComments = async (req, res) => {
       .doc(postId)
       .collection("comments");
 
-    const snapshot = await commentsRef.orderBy("createdAt", "desc").get();
+    const snapshot = await commentsRef
+      .where("isBlind", "==", false) // 블라인드 처리되지 않은 댓글만 조회
+      .orderBy("createdAt", "desc")
+      .get();
+
 
     if (snapshot.empty) {
       return res.status(404).json({ message: "댓글이 없습니다." });
@@ -141,8 +146,12 @@ const getSingleComment = async (req, res) => {
     if (!commentDoc.exists) {
       return res.status(404).json({ error: "댓글을 찾을 수 없습니다." });
     }
-
     const commentData = commentDoc.data();
+
+    if (commentData.isBlind) { // 댓글이 블라인드 처리된 경우
+      return res.status(404).json({ error: "블라인드 처리된 댓글입니다." });
+    }
+
 
     // 댓글 작성자의 프로필 정보 가져오기
     const userProfileDoc = await db
