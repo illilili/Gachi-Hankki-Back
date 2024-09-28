@@ -2,6 +2,7 @@ const admin = require("firebase-admin");
 const moment = require("moment-timezone");
 const db = admin.firestore();
 
+
 // 게시글 신고
 exports.reportPost = async (req, res) => {
   try {
@@ -34,6 +35,7 @@ exports.reportPost = async (req, res) => {
         .json({ error: "게시글 작성자 정보가 필요합니다." });
     }
 
+    //중복 신고 확인
     const existingReport = await db
       .collection("reports")
       .doc("posts")
@@ -55,6 +57,20 @@ exports.reportPost = async (req, res) => {
       postContent: postData.PostContent, // 게시글 내용
       createdAt: admin.firestore.FieldValue.serverTimestamp()
     });
+
+    // 신고 개수 카운트
+    const reportsSnapshot = await db.collection("reports").doc("posts").collection(postId).get();
+    const reportCount = reportsSnapshot.size;
+
+    // 블라인드 처리
+    if (reportCount >= 3) {
+      const postData = await db.collection("posts").doc(postId).get(); // 원래 게시글 데이터 가져오기
+      await db.collection("blindedContent").doc(postId).set({
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        originalData: postData.data() // 원래 데이터 저장
+      });
+      console.log(`게시글 ${postId}가 블라인드 처리되었습니다.`);
+    }
 
     res.status(200).json({ message: "게시글이 성공적으로 신고되었습니다." });
   } catch (error) {
@@ -130,6 +146,20 @@ exports.reportComment = async (req, res) => {
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
 
+    // 신고 개수 카운트
+    const reportsSnapshot = await db.collection("reports").doc("comments").collection(commentId).get();
+    const reportCount = reportsSnapshot.size;
+
+    // 블라인드 처리
+    if (reportCount >= 3) {
+      const commentData = await db.collection("comments").doc(commentId).get(); // 원래 댓글 데이터 가져오기
+      await db.collection("blindedContent").doc(commentId).set({
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        originalData: commentData.data() // 원래 데이터 저장
+      });
+      console.log(`댓글 ${commentId}가 블라인드 처리되었습니다.`);
+    }
+
     res.status(200).json({ message: "댓글이 성공적으로 신고되었습니다." });
   } catch (error) {
     console.error("Error reporting comment:", error);
@@ -204,6 +234,20 @@ exports.reportReply = async (req, res) => {
       content: replyData.content, // 대댓글 내용
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
+
+    // 신고 개수 카운트
+    const reportsSnapshot = await db.collection("reports").doc("replies").collection(replyId).get();
+    const reportCount = reportsSnapshot.size;
+
+    // 블라인드 처리
+    if (reportCount >= 3) {
+      const replyData = await db.collection("replies").doc(replyId).get(); // 원래 답글 데이터 가져오기
+      await db.collection("blindedContent").doc(replyId).set({
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        originalData: replyData.data() // 원래 데이터 저장
+      });
+      console.log(`답글 ${replyId}가 블라인드 처리되었습니다.`);
+    }
 
     res.status(200).json({ message: "대댓글이 성공적으로 신고되었습니다." });
   } catch (error) {
