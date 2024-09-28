@@ -53,7 +53,7 @@ exports.reportPost = async (req, res) => {
       reason: reason,
       PostTitle: postData.PostTitle,
       postContent: postData.PostContent, // 게시글 내용
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: admin.firestore.FieldValue.serverTimestamp()
     });
 
     res.status(200).json({ message: "게시글이 성공적으로 신고되었습니다." });

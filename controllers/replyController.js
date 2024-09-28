@@ -33,12 +33,13 @@ const addReply = async (req, res) => {
         .json({ error: "postId, commentId, content가 필요합니다." });
     }
 
+
     const reply = {
       content,
       userNum: uid,
       nickname,
       department, // 학과 정보 추가
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: admin.firestore.FieldValue.serverTimestamp()
     };
 
     const repliesRef = db
@@ -61,7 +62,7 @@ const addReply = async (req, res) => {
   }
 };
 
-// 댓글의 대댓글 조회
+
 // 댓글의 대댓글 조회
 const getReplies = async (req, res) => {
   try {
