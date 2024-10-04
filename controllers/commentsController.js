@@ -148,11 +148,6 @@ const getSingleComment = async (req, res) => {
     }
     const commentData = commentDoc.data();
 
-    if (commentData.isBlind) {
-      // 댓글이 블라인드 처리된 경우
-      return res.status(404).json({ error: "블라인드 처리된 댓글입니다." });
-    }
-
     // 댓글 작성자의 프로필 정보 가져오기
     const userProfileDoc = await db
       .collection("userProfile")
@@ -207,7 +202,7 @@ const deleteComment = async (req, res) => {
     }
 
     // 댓글 작성자 확인
-    if (commentDoc.data().userNum !== uid) {
+    if (commentDoc.data().userNum !== uid && !req.user.isAdmin) {
       return res
         .status(403)
         .json({ message: "권한이 없습니다. 이 댓글을 삭제할 수 없습니다." });
