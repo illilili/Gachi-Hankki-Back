@@ -250,8 +250,8 @@ exports.deletePost = async (req, res) => {
     }
     const post = postDoc.data();
 
-    // 게시글 작성자 확인
-    if (post.UserNum !== uid) {
+    // 게시글 작성자 확인 또는 관리자 여부 확인
+    if (post.UserNum !== uid && !req.user.isAdmin) {
       return res
         .status(403)
         .json({ message: "권한이 없습니다. 이 게시글을 삭제할 수 없습니다." });
@@ -259,6 +259,7 @@ exports.deletePost = async (req, res) => {
 
     await db.collection("posts").doc(postId).delete();
     res.json({ message: "게시글이 삭제되었습니다." });
+    console.log(`게시글 삭제됨: ${postId} by user: ${uid}`);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

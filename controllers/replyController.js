@@ -202,7 +202,7 @@ const deleteReply = async (req, res) => {
     }
 
     // 대댓글 작성자 확인
-    if (replyDoc.data().userNum !== uid) {
+    if (replyDoc.data().userNum !== uid && !req.user.isAdmin) {
       return res
         .status(403)
         .json({ message: "권한이 없습니다. 이 대댓글을 삭제할 수 없습니다." });

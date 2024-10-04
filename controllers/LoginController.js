@@ -43,6 +43,21 @@ exports.login = async (req, res) => {
       return res.status(400).send('사용자 정보를 찾을 수 없습니다.');
     }
 
+    // 정지 또는 영구 탈퇴 확인
+    if (userData.banned) {
+      return res.status(403).send('이 계정은 영구 탈퇴되었습니다.');
+    }
+
+    if (userData.suspended) {
+      const suspendedUntil = userData.suspendedUntil.toDate(); // Firestore Timestamp -> Date 변환
+      const now = new Date();
+
+      if (suspendedUntil > now) {
+        const remainingDays = Math.ceil((suspendedUntil - now) / (1000 * 60 * 60 * 24));
+        return res.status(403).send(`이 계정은 ${remainingDays}일 동안 정지되었습니다.`);
+      }
+    }
+
     // 비밀번호 확인
     const passwordMatch = await bcrypt.compare(password, userData.passwordHash);
     if (!passwordMatch) {
