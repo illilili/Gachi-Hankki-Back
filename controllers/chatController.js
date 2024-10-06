@@ -2,13 +2,13 @@ const admin = require("firebase-admin");
 const realtimeDB = admin.database();
 const firestoreDB = admin.firestore();
 const authenticateToken = require("../middlewares/authenticateToken.js");
-
+const db = admin.firestore();
 
 const getKoreanTime = () => {
   const date = new Date();
   const offsetInMillis = 9 * 60 * 60 * 1000;
   const koreanTime = new Date(date.getTime() + offsetInMillis);
-  return koreanTime.toISOString().replace('T', ' ').split('.')[0];
+  return koreanTime.toISOString().replace("T", " ").split(".")[0];
 };
 
 // 1:1 쪽지방 생성
@@ -18,24 +18,31 @@ exports.createRoom = async (req, res) => {
   console.log("요청한 사용자 정보:", req.user.nickname);
 
   if (!senderNickname || !receiverNickname) {
-    return res.status(400).json({ success: false, message: '발신자와 수신자 닉네임이 필요합니다.' });
+    return res.status(400).json({
+      success: false,
+      message: "발신자와 수신자 닉네임이 필요합니다.",
+    });
   }
 
   try {
-
-    const userSnapshot = await firestoreDB.collection('userProfile')
-      .where('nickname', '==', receiverNickname)
+    const userSnapshot = await firestoreDB
+      .collection("userProfile")
+      .where("nickname", "==", receiverNickname)
       .get();
 
     if (userSnapshot.empty) {
-      return res.status(404).json({ success: false, message: '수신자 닉네임이 유효하지 않습니다. 회원가입된 사용자가 아닙니다.' });
+      return res.status(404).json({
+        success: false,
+        message:
+          "수신자 닉네임이 유효하지 않습니다. 회원가입된 사용자가 아닙니다.",
+      });
     }
 
     const memberKey = [senderNickname, receiverNickname].sort().join("_");
 
-    const roomsRef = realtimeDB.ref('ChatRooms');
+    const roomsRef = realtimeDB.ref("ChatRooms");
     const existingRoomSnapshot = await roomsRef
-      .orderByChild('memberKey')
+      .orderByChild("memberKey")
       .equalTo(memberKey)
       .once("value");
 
@@ -45,8 +52,8 @@ exports.createRoom = async (req, res) => {
 
       return res.status(200).json({
         success: true,
-        message: '이미 존재하는 쪽지방입니다.',
-        roomId: existingRoomId
+        message: "이미 존재하는 쪽지방입니다.",
+        roomId: existingRoomId,
       });
     }
 
@@ -61,10 +68,18 @@ exports.createRoom = async (req, res) => {
       lastUpdated: now,
     });
 
-    res.status(201).json({ success: true, message: '1:1 쪽지방이 생성되었습니다.', roomId: roomId });
+    res.status(201).json({
+      success: true,
+      message: "1:1 쪽지방이 생성되었습니다.",
+      roomId: roomId,
+    });
   } catch (error) {
     console.error("쪽지방 생성 오류:", error);
-    res.status(500).json({ success: true, message: '쪽지방 생성 중 오류가 발생했습니다.', details: error.message });
+    res.status(500).json({
+      success: true,
+      message: "쪽지방 생성 중 오류가 발생했습니다.",
+      details: error.message,
+    });
   }
 };
 
@@ -74,7 +89,11 @@ exports.addMessage = async (req, res) => {
   const { senderNickname, text } = req.body;
 
   if (!roomId || !senderNickname || !text) {
-    return res.status(400).json({ success: false, message: '유효하지 않은 요청입니다. roomId, senderNickname, text가 필요합니다.' });
+    return res.status(400).json({
+      success: false,
+      message:
+        "유효하지 않은 요청입니다. roomId, senderNickname, text가 필요합니다.",
+    });
   }
 
   const now = getKoreanTime();
@@ -92,13 +111,17 @@ exports.addMessage = async (req, res) => {
     const roomRef = realtimeDB.ref(`ChatRooms/${roomId}`);
     await roomRef.update({
       lastUpdated: now,
-      lastMessage: text
+      lastMessage: text,
     });
 
-    res.status(201).json({ success: true, message: "메시지가 추가되었습니다." });
+    res
+      .status(201)
+      .json({ success: true, message: "메시지가 추가되었습니다." });
   } catch (error) {
     console.error("메시지 추가 오류:", error);
-    res.status(500).json({ success: false, message: "서버 오류가 발생했습니다." });
+    res
+      .status(500)
+      .json({ success: false, message: "서버 오류가 발생했습니다." });
   }
 };
 
@@ -108,11 +131,10 @@ exports.getRooms = async (req, res) => {
   const { lastRoomId } = req.query;
 
   try {
-    const roomsRef = realtimeDB.ref('ChatRooms');
+    const roomsRef = realtimeDB.ref("ChatRooms");
     let query = roomsRef.orderByKey().limitToFirst(15);
 
     if (lastRoomId) {
-
       query = roomsRef.orderByKey().startAfter(lastRoomId).limitToFirst(10);
     }
 
@@ -125,12 +147,21 @@ exports.getRooms = async (req, res) => {
       for (let roomId in rooms) {
         const room = rooms[roomId];
 
-        if (room && Array.isArray(room.members) && room.members.includes(senderNickname)) {
+        if (
+          room &&
+          Array.isArray(room.members) &&
+          room.members.includes(senderNickname)
+        ) {
           roomList[roomId] = {
             roomId: roomId,
             members: room.members,
-            lastUpdated: room.lastUpdated ? new Date(room.lastUpdated).toISOString().replace('T', ' ').split('.')[0] : "",
-            lastMessage: room.lastMessage || ""
+            lastUpdated: room.lastUpdated
+              ? new Date(room.lastUpdated)
+                  .toISOString()
+                  .replace("T", " ")
+                  .split(".")[0]
+              : "",
+            lastMessage: room.lastMessage || "",
           };
         }
       }
@@ -140,23 +171,28 @@ exports.getRooms = async (req, res) => {
       res.status(200).json({
         success: true,
         rooms: roomList,
-        lastRoomId: lastFetchedRoomId
+        lastRoomId: lastFetchedRoomId,
       });
     } else {
       res.status(200).json({ success: true, rooms: [], lastRoomId: null });
     }
   } catch (error) {
     console.error("쪽지방 목록 가져오기 오류:", error);
-    res.status(500).json({ success: false, message: "서버 오류가 발생했습니다." });
+    res
+      .status(500)
+      .json({ success: false, message: "서버 오류가 발생했습니다." });
   }
 };
 
-// 특정 방 메시지 전체 가져오기 
+// 특정 방 메시지 전체 가져오기
 exports.getMessages = async (req, res) => {
   const roomId = req.params.roomId;
   const { lastMessageKey } = req.query;
   if (!roomId) {
-    return res.status(400).json({ success: false, message: '유효하지 않은 요청입니다. roomId가 필요합니다.' });
+    return res.status(400).json({
+      success: false,
+      message: "유효하지 않은 요청입니다. roomId가 필요합니다.",
+    });
   }
 
   try {
@@ -176,21 +212,28 @@ exports.getMessages = async (req, res) => {
       for (let key in messages) {
         if (messages[key].timestamp) {
           const timestamp = messages[key].timestamp;
-          messages[key].timestamp = new Date(timestamp).toISOString().replace('T', ' ').split('.')[0];
+          messages[key].timestamp = new Date(timestamp)
+            .toISOString()
+            .replace("T", " ")
+            .split(".")[0];
         }
       }
 
       res.status(200).json({
         success: true,
         messages: messages,
-        lastMessageKey: lastFetchedMessageKey
+        lastMessageKey: lastFetchedMessageKey,
       });
     } else {
-      res.status(200).json({ success: true, messages: [], lastMessageKey: null });
+      res
+        .status(200)
+        .json({ success: true, messages: [], lastMessageKey: null });
     }
   } catch (error) {
     console.error("메시지 가져오기 오류:", error);
-    res.status(500).json({ success: false, message: "서버 오류가 발생했습니다." });
+    res
+      .status(500)
+      .json({ success: false, message: "서버 오류가 발생했습니다." });
   }
 };
 
@@ -199,22 +242,30 @@ exports.deleteRoom = async (req, res) => {
   const roomId = req.params.roomId;
 
   if (!roomId) {
-    return res.status(400).json({ success: false, message: '유효하지 않은 요청입니다. roomId가 필요합니다.' });
+    return res.status(400).json({
+      success: false,
+      message: "유효하지 않은 요청입니다. roomId가 필요합니다.",
+    });
   }
 
   try {
     const roomRef = realtimeDB.ref(`ChatRooms/${roomId}`);
 
-    await roomRef.child('messages').remove();
+    await roomRef.child("messages").remove();
     await roomRef.remove();
 
-    res.status(200).json({ success: true, message: '쪽지방이 삭제되었습니다.' });
+    res
+      .status(200)
+      .json({ success: true, message: "쪽지방이 삭제되었습니다." });
   } catch (error) {
     console.error("쪽지방 삭제 오류:", error);
-    res.status(500).json({ success: false, message: '쪽지방 삭제 중 오류가 발생했습니다.', details: error.message });
+    res.status(500).json({
+      success: false,
+      message: "쪽지방 삭제 중 오류가 발생했습니다.",
+      details: error.message,
+    });
   }
 };
-
 
 // 상대방 프로필 조회
 exports.getUserProfile = async (req, res) => {
@@ -222,7 +273,10 @@ exports.getUserProfile = async (req, res) => {
   const senderNickname = req.user.nickname;
 
   if (!roomId) {
-    return res.status(400).json({ success: false, message: '유효하지 않은 요청입니다. roomId가 필요합니다.' });
+    return res.status(400).json({
+      success: false,
+      message: "유효하지 않은 요청입니다. roomId가 필요합니다.",
+    });
   }
 
   try {
@@ -231,36 +285,51 @@ exports.getUserProfile = async (req, res) => {
     const roomSnapshot = await roomRef.once("value");
 
     if (!roomSnapshot.exists()) {
-      return res.status(404).json({ success: false, message: '쪽지방을 찾을 수 없습니다.' });
+      return res
+        .status(404)
+        .json({ success: false, message: "쪽지방을 찾을 수 없습니다." });
     }
 
     const roomData = roomSnapshot.val();
-    const receiverNickname = roomData.members.find(member => member !== senderNickname);
+    const receiverNickname = roomData.members.find(
+      (member) => member !== senderNickname
+    );
 
     // Firestore에서 상대방 프로필 정보 가져오기 (닉네임으로 uid 찾기)
-    const userProfileSnapshot = await firestoreDB.collection('userProfile')
-      .where('nickname', '==', receiverNickname)
+    const userProfileSnapshot = await firestoreDB
+      .collection("userProfile")
+      .where("nickname", "==", receiverNickname)
       .get();
 
     if (userProfileSnapshot.empty) {
-      return res.status(404).json({ success: false, message: '상대방 프로필을 찾을 수 없습니다.' });
+      return res
+        .status(404)
+        .json({ success: false, message: "상대방 프로필을 찾을 수 없습니다." });
     }
 
     const userProfile = userProfileSnapshot.docs[0].data();
     const uid = userProfileSnapshot.docs[0].id;
+    const userDoc = await db.collection("users").doc(uid).get();
 
+    const userData = userDoc.data();
+    userProfile.department = userData.department;
 
     res.status(200).json({
       success: true,
       profile: {
         uid: uid,
         nickname: userProfile.nickname,
+        bio: userProfile.bio,
+        profileImageNumber: userProfile.profileImageNumber,
+        department: userProfile.department,
         // 추가적인 프로필 정보가 필요하면 여기에 추가
-      }
+      },
     });
   } catch (error) {
     console.error("상대방 프로필 조회 오류:", error);
-    res.status(500).json({ success: false, message: "프로필 조회 중 오류가 발생했습니다." });
+    res
+      .status(500)
+      .json({ success: false, message: "프로필 조회 중 오류가 발생했습니다." });
   }
 };
 
@@ -278,18 +347,25 @@ exports.reportUser = async (req, res) => {
 
     if (!roomSnapshot.exists()) {
       console.log("방이 존재하지 않음."); // 로그 추가
-      return res.status(404).json({ success: false, message: '쪽지방을 찾을 수 없습니다.' });
+      return res
+        .status(404)
+        .json({ success: false, message: "쪽지방을 찾을 수 없습니다." });
     }
 
     const roomData = roomSnapshot.val();
-    const receiverNickname = roomData.members.find(member => member !== senderNickname);
-    const userProfileSnapshot = await firestoreDB.collection('userProfile')
-      .where('nickname', '==', receiverNickname)
+    const receiverNickname = roomData.members.find(
+      (member) => member !== senderNickname
+    );
+    const userProfileSnapshot = await firestoreDB
+      .collection("userProfile")
+      .where("nickname", "==", receiverNickname)
       .get();
 
     if (userProfileSnapshot.empty) {
       console.log("상대방 프로필을 찾을 수 없음."); // 로그 추가
-      return res.status(404).json({ success: false, message: '상대방 프로필을 찾을 수 없습니다.' });
+      return res
+        .status(404)
+        .json({ success: false, message: "상대방 프로필을 찾을 수 없습니다." });
     }
 
     const reportedUid = userProfileSnapshot.docs[0].id;
@@ -297,22 +373,31 @@ exports.reportUser = async (req, res) => {
 
     if (!receiverNickname || !reason) {
       console.log("유효하지 않은 요청."); // 로그 추가
-      return res.status(400).json({ success: false, message: '유효하지 않은 요청입니다. reportedNickname과 reason이 필요합니다.' });
+      return res.status(400).json({
+        success: false,
+        message:
+          "유효하지 않은 요청입니다. reportedNickname과 reason이 필요합니다.",
+      });
     }
 
-    const reportsRef = firestoreDB.collection("reports").doc("users").collection(reportedUid);
+    const reportsRef = firestoreDB
+      .collection("reports")
+      .doc("users")
+      .collection(reportedUid);
     await reportsRef.add({
       reporter: req.user.nickname,
       reported: receiverNickname,
       reason: reason,
-      timestamp: getKoreanTime()
+      timestamp: getKoreanTime(),
     });
 
-    res.status(201).json({ success: true, message: '상대방이 신고되었습니다.' });
+    res
+      .status(201)
+      .json({ success: true, message: "상대방이 신고되었습니다." });
   } catch (error) {
     console.error("오류 발생:", error);
-    res.status(500).json({ success: false, message: "신고 처리 중 오류가 발생했습니다." });
+    res
+      .status(500)
+      .json({ success: false, message: "신고 처리 중 오류가 발생했습니다." });
   }
 };
-
-
