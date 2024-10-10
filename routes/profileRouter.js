@@ -7,8 +7,11 @@ const router = express.Router();
 // 프로필 생성
 router.post('/', authenticateToken, createProfile);
 
-// 프로필 조회
+// 자기 프로필 조회
 router.get('/', authenticateToken, getProfile);
+
+// 다른 사람 프로필 조회
+router.get('/:uid', authenticateToken, getProfile);
 
 // 프로필 이미지 변경 
 router.patch('/image', authenticateToken, updateProfileImage);
