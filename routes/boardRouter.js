@@ -36,6 +36,9 @@ router.get("/:id", postController.getPostById);
 // 게시글 수정
 router.put("/:id", authenticateToken, postController.updatePost);
 
+// 게시글 상태 수정
+router.patch("/:id/status", authenticateToken, postController.updatePostStatus);
+
 // 게시글 삭제
 router.delete("/:id", authenticateToken, postController.deletePost);
 

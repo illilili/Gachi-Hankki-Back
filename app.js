@@ -54,6 +54,10 @@ app.use("/", chatRouter);
 const reportRouter = require("./routes/reportRouter.js");
 app.use("/", reportRouter);
 
+//매칭
+const matchRouter = require("./routes/matchRouter");
+app.use("/match", matchRouter);
+
 // 테스트 엔드포인트
 app.get("/test", authenticateToken, (req, res) => {
   console.log("User object:", req.user); // 로그 추가

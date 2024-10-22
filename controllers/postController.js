@@ -105,6 +105,7 @@ exports.createPost = async (req, res) => {
             UserNum: uid,
             nickname,
             department,
+            status: "매칭중",
           };
           const docRef = await db.collection("posts").add(post);
           res
@@ -131,6 +132,7 @@ exports.createPost = async (req, res) => {
           UserNum: uid,
           nickname,
           department,
+          status: "매칭중",
         };
         const docRef = await db.collection("posts").add(post);
         res
@@ -234,6 +236,37 @@ exports.updatePost = async (req, res) => {
 
     await db.collection("posts").doc(postId).update(updateData);
     res.json({ message: "게시글이 수정되었습니다." });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// 게시글 상태 업데이트 (약속 성사, 식사 완료)
+exports.updatePostStatus = async (req, res) => {
+  try {
+    const postId = req.params.id;
+    const uid = req.user.uid;
+    const { status } = req.body; // 상태 업데이트 요청 받음 (약속 성사, 식사 완료)
+
+    const postDoc = await db.collection("posts").doc(postId).get();
+    if (!postDoc.exists) {
+      return res.status(404).json({ message: "게시글을 찾을 수 없습니다." });
+    }
+
+    const post = postDoc.data();
+
+    // 작성자 확인
+    if (post.UserNum !== uid) {
+      return res.status(403).json({ message: "권한이 없습니다." });
+    }
+
+    // 상태 업데이트 (약속 성사, 식사 완료로 변경)
+    if (status !== "약속성사" && status !== "식사완료") {
+      return res.status(400).json({ message: "유효하지 않은 상태입니다." });
+    }
+
+    await db.collection("posts").doc(postId).update({ status });
+    res.json({ message: `게시글 상태가 '${status}'로 변경되었습니다.` });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
