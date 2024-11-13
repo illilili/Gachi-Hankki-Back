@@ -78,7 +78,7 @@ const getComments = async (req, res) => {
       .collection("comments");
 
     const snapshot = await commentsRef
-      .where("isBlind", "==", false) // 블라인드 처리되지 않은 댓글만 조회
+      //.where("isBlind", "==", false) // 블라인드 처리되지 않은 댓글만 조회
       .orderBy("createdAt", "desc")
       .get();
 
