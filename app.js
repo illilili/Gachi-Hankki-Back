@@ -4,7 +4,8 @@ const bodyParser = require("body-parser");
 const app = express();
 var admin = require("firebase-admin");
 const jwt = require("jsonwebtoken");
-const serviceAccount = JSON.parse(process.env.SERVICE_ACCOUNT_KEY);
+// var serviceAccount = require("./serviceAccountKey.json");
+const serviceAccount = JSON.parse(process.env.SERVICE_ACCOUNT_KEY); // 배포용
 const authenticateToken = require("./middlewares/authenticateToken.js");
 
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
