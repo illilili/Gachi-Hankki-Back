@@ -2,7 +2,6 @@ const admin = require("firebase-admin");
 const realtimeDB = admin.database();
 const firestoreDB = admin.firestore();
 const authenticateToken = require("../middlewares/authenticateToken.js");
-const db = admin.firestore();
 
 const getKoreanTime = () => {
   const date = new Date();
@@ -267,11 +266,12 @@ exports.deleteRoom = async (req, res) => {
   }
 };
 
+const db = admin.firestore();
+
 // 상대방 프로필 조회
 exports.getUserProfile = async (req, res) => {
   const { roomId } = req.params;
   const senderNickname = req.user.nickname;
-
   if (!roomId) {
     return res.status(400).json({
       success: false,
@@ -358,7 +358,7 @@ exports.reportUser = async (req, res) => {
     );
     const userProfileSnapshot = await firestoreDB
       .collection("userProfile")
-      .where("nickname", "==", receiverNickname)
+      .where("nickname", "==", senderNickname)
       .get();
 
     if (userProfileSnapshot.empty) {
