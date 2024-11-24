@@ -216,13 +216,22 @@ exports.deleteRoom = async (req, res) => {
 };
 
 
+const db = admin.firestore();
+
 // 상대방 프로필 조회
 exports.getUserProfile = async (req, res) => {
   const { roomId } = req.params;
-  const senderNickname = req.user.nickname;
 
+  const userDoc = await firestoreDB
+    .collection("userProfile")
+    .doc(req.user.uid)
+    .get();
+  const senderNickname = userDoc.data().nickname; // uid로 닉네임 가져오기
   if (!roomId) {
-    return res.status(400).json({ success: false, message: '유효하지 않은 요청입니다. roomId가 필요합니다.' });
+    return res.status(400).json({
+      success: false,
+      message: "유효하지 않은 요청입니다. roomId가 필요합니다.",
+    });
   }
 
   try {
@@ -231,38 +240,55 @@ exports.getUserProfile = async (req, res) => {
     const roomSnapshot = await roomRef.once("value");
 
     if (!roomSnapshot.exists()) {
-      return res.status(404).json({ success: false, message: '쪽지방을 찾을 수 없습니다.' });
+      return res
+        .status(404)
+        .json({ success: false, message: "쪽지방을 찾을 수 없습니다." });
     }
 
     const roomData = roomSnapshot.val();
-    const receiverNickname = roomData.members.find(member => member !== senderNickname);
+    const receiverNickname = roomData.members.find(
+      (member) => member !== senderNickname
+    );
 
     // Firestore에서 상대방 프로필 정보 가져오기 (닉네임으로 uid 찾기)
-    const userProfileSnapshot = await firestoreDB.collection('userProfile')
-      .where('nickname', '==', receiverNickname)
+    const userProfileSnapshot = await firestoreDB
+      .collection("userProfile")
+      .where("nickname", "==", receiverNickname)
       .get();
 
     if (userProfileSnapshot.empty) {
-      return res.status(404).json({ success: false, message: '상대방 프로필을 찾을 수 없습니다.' });
+      return res
+        .status(404)
+        .json({ success: false, message: "상대방 프로필을 찾을 수 없습니다." });
     }
 
     const userProfile = userProfileSnapshot.docs[0].data();
     const uid = userProfileSnapshot.docs[0].id;
+    const userDoc = await db.collection("users").doc(uid).get();
 
+    const userData = userDoc.data();
+    userProfile.department = userData.department;
 
     res.status(200).json({
       success: true,
       profile: {
         uid: uid,
         nickname: userProfile.nickname,
+        bio: userProfile.bio,
+        profileImageNumber: userProfile.profileImageNumber,
+        department: userProfile.department,
         // 추가적인 프로필 정보가 필요하면 여기에 추가
-      }
+      },
     });
   } catch (error) {
     console.error("상대방 프로필 조회 오류:", error);
-    res.status(500).json({ success: false, message: "프로필 조회 중 오류가 발생했습니다." });
+    res
+      .status(500)
+      .json({ success: false, message: "프로필 조회 중 오류가 발생했습니다." });
   }
 };
+
+
 
 // 채팅 상대방 신고
 exports.reportUser = async (req, res) => {
