@@ -65,7 +65,7 @@ exports.login = async (req, res) => {
     }
 
     // 액세스 토큰과 리프레시 토큰 생성
-    const accessToken = jwt.sign({ uid: userRecord.uid }, ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
+    const accessToken = jwt.sign({ uid: userRecord.uid }, ACCESS_TOKEN_SECRET, { expiresIn: '1d' });
     const refreshToken = jwt.sign({ uid: userRecord.uid }, REFRESH_TOKEN_SECRET, { expiresIn: REFRESH_TOKEN_EXPIRATION });
 
     // 리프레시 토큰을 Firestore에 저장
